@@ -1,0 +1,13 @@
+[package]
+name = "spellbook-api"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+axum = "0.7.7"
+diesel = { version = "2.2.4", features = ["postgres"] }
+dotenvy = "0.15.7"
+serde = { version = "1.0.213", features = ["derive"] }
+serde_json = "1.0.132"
+tokio = { version = "1.41.0", features = ["full"] }
+tower = "0.5.1"
