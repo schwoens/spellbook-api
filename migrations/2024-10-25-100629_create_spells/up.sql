@@ -2,7 +2,7 @@
 CREATE TABLE spells (
 	id SERIAL PRIMARY KEY,
 	name VARCHAR NOT NULL,
-	level INTEGER NOT NULL,
+	level VARCHAR NOT NULL,
 	time VARCHAR NOT NULL,
 	school VARCHAR NOT NULL,
 	concentration BOOL NOT NULL,

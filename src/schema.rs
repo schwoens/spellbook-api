@@ -4,7 +4,7 @@ diesel::table! {
     spells (id) {
         id -> Int4,
         name -> Varchar,
-        level -> Int4,
+        level -> Varchar,
         time -> Varchar,
         school -> Varchar,
         concentration -> Bool,

@@ -12,7 +12,7 @@ use crate::{
 pub struct Spell {
     pub id: i32,
     pub name: String,
-    pub level: i32,
+    pub level: String,
     pub time: String,
     pub school: String,
     pub concentration: bool,
@@ -22,13 +22,9 @@ pub struct Spell {
 
 impl IntoResource<SpellResource> for Spell {
     fn into_resource(self) -> SpellResource {
-        let level = match self.level {
-            0 => "Cantrip".to_string(),
-            l => l.to_string(),
-        };
         SpellResource {
             name: self.name,
-            level,
+            level: self.level,
             time: self.time,
             school: self.school,
             concentration: self.concentration,
@@ -50,7 +46,7 @@ impl IntoCollection<SpellResource> for Vec<Spell> {
 #[diesel(table_name = spells)]
 pub struct NewSpell<'a> {
     pub name: &'a str,
-    pub level: i32,
+    pub level: &'a str,
     pub time: &'a str,
     pub school: &'a str,
     pub concentration: bool,

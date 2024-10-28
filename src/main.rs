@@ -36,9 +36,13 @@ async fn post_spell(
 ) -> Result<impl IntoResponse, StatusCode> {
     let conn = &mut establish_connection();
 
+    if let Err(e) = request.validate() {
+        return Ok((StatusCode::BAD_REQUEST, e.to_string()).into_response());
+    }
+
     let new_spell = NewSpell {
         name: &request.name,
-        level: request.level,
+        level: &request.level,
         time: &request.time,
         school: &request.school,
         concentration: request.concentration,
@@ -70,9 +74,3 @@ async fn post_spell(
         }
     }
 }
-
-// async fn update_spell(
-//     Json(request): Json<UpdateSpellRequest>,
-// ) -> Result<impl IntoResponse, StatusCode> {
-//     todo!()
-// }
