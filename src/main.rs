@@ -1,11 +1,11 @@
-use axum::{http::StatusCode, response::IntoResponse, routing::get};
+use axum::{debug_handler, http::StatusCode, response::IntoResponse, routing::get};
 use axum::{Json, Router};
 use diesel::result::DatabaseErrorKind;
 use spellbook_api::{
     establish_connection,
     models::NewSpell,
-    repositories,
-    requests::CreateSpellRequest,
+    repositories::{self, spells::UpdatedSpell},
+    requests::{CreateSpellRequest, UpdateSpellRequest},
     resources::{IntoCollection, IntoResource},
 };
 
@@ -13,7 +13,10 @@ use spellbook_api::{
 async fn main() {
     let app = Router::new()
         .route("/", get(|| async { "Hello World" }))
-        .route("/spells", get(get_spells).post(post_spell));
+        .route(
+            "/spells",
+            get(get_spells).post(post_spell).put(update_spell),
+        );
 
     let listener = tokio::net::TcpListener::bind("0.0.0.0:3000").await.unwrap();
     axum::serve(listener, app).await.unwrap();
@@ -70,6 +73,49 @@ async fn post_spell(
                 _ => Ok(
                     (StatusCode::INTERNAL_SERVER_ERROR, "error inserting spell").into_response()
                 ),
+            }
+        }
+    }
+}
+
+async fn update_spell(
+    Json(request): Json<UpdateSpellRequest>,
+) -> Result<impl IntoResponse, StatusCode> {
+    let conn = &mut establish_connection();
+
+    if let Err(e) = request.validate() {
+        return Ok((StatusCode::BAD_REQUEST, e.to_string()).into_response());
+    }
+
+    let updated_spell = UpdatedSpell {
+        name: &request.updated_spell.name,
+        level: &request.updated_spell.level,
+        casting_time: &request.updated_spell.casting_time,
+        magic_school: &request.updated_spell.magic_school,
+        concentration: request.updated_spell.concentration,
+        range: &request.updated_spell.range,
+        duration: &request.updated_spell.duration,
+    };
+
+    match repositories::spells::update_spell(conn, &request.name, updated_spell) {
+        Ok(spell) => Ok(Json(spell.into_resource()).into_response()),
+        Err(e) => {
+            eprintln!("error updating spell: {}", e);
+            match e {
+                diesel::result::Error::DatabaseError(kind, _) => {
+                    match kind {
+                        DatabaseErrorKind::UniqueViolation => Ok((
+                            StatusCode::BAD_REQUEST,
+                            format!("a spell with the name \"{}\" already exists", request.name),
+                        )
+                            .into_response()),
+                        _ => Ok((StatusCode::INTERNAL_SERVER_ERROR, "error updating spell")
+                            .into_response()),
+                    }
+                }
+                _ => {
+                    Ok((StatusCode::INTERNAL_SERVER_ERROR, "error updating spell").into_response())
+                }
             }
         }
     }

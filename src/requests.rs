@@ -33,7 +33,16 @@ impl CreateSpellRequest {
     }
 }
 
+type UpdatedSpellData = CreateSpellRequest;
+
+#[derive(Deserialize)]
 pub struct UpdateSpellRequest {
     pub name: String,
-    pub updated_spell: CreateSpellRequest,
+    pub updated_spell: UpdatedSpellData,
+}
+
+impl UpdateSpellRequest {
+    pub fn validate(&self) -> Result<(), SpellValidationError> {
+        self.updated_spell.validate()
+    }
 }

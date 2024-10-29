@@ -42,7 +42,7 @@ impl IntoCollection<SpellResource> for Vec<Spell> {
     }
 }
 
-#[derive(Insertable)]
+#[derive(Insertable, AsChangeset)]
 #[diesel(table_name = spells)]
 pub struct NewSpell<'a> {
     pub name: &'a str,

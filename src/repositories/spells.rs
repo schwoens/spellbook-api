@@ -1,8 +1,10 @@
-use diesel::{query_dsl::methods::SelectDsl, PgConnection, RunQueryDsl, SelectableHelper};
+use diesel::{
+    query_dsl::methods::SelectDsl, ExpressionMethods, PgConnection, RunQueryDsl, SelectableHelper,
+};
 
 use crate::{
     models::{NewSpell, Spell},
-    schema::spells,
+    schema::spells::{self, name},
 };
 
 pub fn get_spells(conn: &mut PgConnection) -> Result<Vec<Spell>, diesel::result::Error> {
@@ -15,6 +17,20 @@ pub fn insert_spell(
 ) -> Result<Spell, diesel::result::Error> {
     diesel::insert_into(spells::table)
         .values(new_spell)
+        .returning(Spell::as_returning())
+        .get_result(conn)
+}
+
+pub type UpdatedSpell<'a> = NewSpell<'a>;
+
+pub fn update_spell(
+    conn: &mut PgConnection,
+    spell_name: &str,
+    updated_spell: UpdatedSpell,
+) -> Result<Spell, diesel::result::Error> {
+    diesel::update(spells::table)
+        .filter(name.eq(spell_name))
+        .set(updated_spell)
         .returning(Spell::as_returning())
         .get_result(conn)
 }
