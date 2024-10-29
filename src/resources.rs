@@ -12,8 +12,8 @@ pub trait IntoCollection<T> {
 pub struct SpellResource {
     pub name: String,
     pub level: String,
-    pub time: String,
-    pub school: String,
+    pub casting_time: String,
+    pub magic_school: String,
     pub concentration: bool,
     pub range: String,
     pub duration: String,

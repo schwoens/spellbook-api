@@ -3,6 +3,7 @@ use std::env;
 use diesel::{Connection, PgConnection};
 use dotenvy::dotenv;
 
+pub mod enums;
 pub mod errors;
 pub mod models;
 pub mod repositories;

@@ -43,8 +43,8 @@ async fn post_spell(
     let new_spell = NewSpell {
         name: &request.name,
         level: &request.level,
-        time: &request.time,
-        school: &request.school,
+        casting_time: &request.casting_time,
+        magic_school: &request.magic_school,
         concentration: request.concentration,
         range: &request.range,
         duration: &request.duration,
