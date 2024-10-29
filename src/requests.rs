@@ -46,3 +46,8 @@ impl UpdateSpellRequest {
         self.updated_spell.validate()
     }
 }
+
+#[derive(Deserialize)]
+pub struct DeleteSpellRequest {
+    pub name: String,
+}

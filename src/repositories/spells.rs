@@ -34,3 +34,12 @@ pub fn update_spell(
         .returning(Spell::as_returning())
         .get_result(conn)
 }
+
+pub fn delete_spell(
+    conn: &mut PgConnection,
+    spell_name: &str,
+) -> Result<usize, diesel::result::Error> {
+    diesel::delete(spells::table)
+        .filter(name.eq(spell_name))
+        .execute(conn)
+}
