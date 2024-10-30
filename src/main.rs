@@ -5,7 +5,7 @@ use spellbook_api::{
     establish_connection,
     models::NewSpell,
     repositories::{self, spells::UpdatedSpell},
-    requests::{CreateSpellRequest, DeleteSpellRequest, UpdateSpellRequest},
+    requests::{CreateSpellRequest, DeleteSpellRequest, GetSpellRequest, UpdateSpellRequest},
     resources::{IntoCollection, IntoResource},
 };
 
@@ -13,12 +13,10 @@ use spellbook_api::{
 async fn main() {
     let app = Router::new()
         .route("/", get(|| async { "Hello World" }))
+        .route("/spells", get(get_spells).post(post_spell))
         .route(
-            "/spells",
-            get(get_spells)
-                .post(post_spell)
-                .put(update_spell)
-                .delete(delete_spell),
+            "/spell",
+            get(get_spell).put(update_spell).delete(delete_spell),
         );
 
     let listener = tokio::net::TcpListener::bind("0.0.0.0:3000").await.unwrap();
@@ -34,6 +32,25 @@ async fn get_spells() -> Result<impl IntoResponse, StatusCode> {
             eprintln!("error retrieving spells: {}", e);
             Ok((StatusCode::INTERNAL_SERVER_ERROR, "error retrieving spells").into_response())
         }
+    }
+}
+
+async fn get_spell(Json(request): Json<GetSpellRequest>) -> Result<impl IntoResponse, StatusCode> {
+    let conn = &mut establish_connection();
+
+    match repositories::spells::get_spell(conn, &request.name) {
+        Ok(spell) => Ok(Json(spell.into_resource()).into_response()),
+        Err(e) => match e {
+            diesel::result::Error::NotFound => Ok((
+                StatusCode::NOT_FOUND,
+                format!("a spell with the name \"{}\" does not exist", &request.name),
+            )
+                .into_response()),
+            _ => {
+                eprintln!("error retrieving spells: {}", e);
+                Ok((StatusCode::INTERNAL_SERVER_ERROR, "error retrieving spells").into_response())
+            }
+        },
     }
 }
 
@@ -54,6 +71,7 @@ async fn post_spell(
         concentration: request.concentration,
         range: &request.range,
         duration: &request.duration,
+        description: &request.description,
     };
 
     match repositories::spells::insert_spell(conn, new_spell) {
@@ -98,6 +116,7 @@ async fn update_spell(
         concentration: request.updated_spell.concentration,
         range: &request.updated_spell.range,
         duration: &request.updated_spell.duration,
+        description: &request.updated_spell.duration,
     };
 
     match repositories::spells::update_spell(conn, &request.name, updated_spell) {

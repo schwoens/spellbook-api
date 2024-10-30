@@ -17,4 +17,5 @@ pub struct SpellResource {
     pub concentration: bool,
     pub range: String,
     pub duration: String,
+    pub description: String,
 }

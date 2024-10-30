@@ -6,6 +6,11 @@ use serde::Deserialize;
 use crate::{enums::MagicSchool, errors::SpellValidationError};
 
 #[derive(Deserialize)]
+pub struct GetSpellRequest {
+    pub name: String,
+}
+
+#[derive(Deserialize)]
 pub struct CreateSpellRequest {
     pub name: String,
     pub level: String,
@@ -14,6 +19,7 @@ pub struct CreateSpellRequest {
     pub concentration: bool,
     pub range: String,
     pub duration: String,
+    pub description: String,
 }
 
 impl CreateSpellRequest {

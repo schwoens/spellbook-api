@@ -18,6 +18,7 @@ pub struct Spell {
     pub concentration: bool,
     pub range: String,
     pub duration: String,
+    pub description: String,
 }
 
 impl IntoResource<SpellResource> for Spell {
@@ -30,6 +31,7 @@ impl IntoResource<SpellResource> for Spell {
             concentration: self.concentration,
             range: self.range,
             duration: self.duration,
+            description: self.description,
         }
     }
 }
@@ -52,4 +54,5 @@ pub struct NewSpell<'a> {
     pub concentration: bool,
     pub range: &'a str,
     pub duration: &'a str,
+    pub description: &'a str,
 }

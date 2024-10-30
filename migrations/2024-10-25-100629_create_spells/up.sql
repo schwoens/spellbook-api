@@ -8,5 +8,6 @@ CREATE TABLE spells (
 	concentration BOOL NOT NULL,
 	range VARCHAR NOT NULL,
 	duration VARCHAR NOT NULL,
+	description TEXT NOT NULL, 
 	UNIQUE(name)
 );

@@ -10,5 +10,6 @@ diesel::table! {
         concentration -> Bool,
         range -> Varchar,
         duration -> Varchar,
+        description -> Text,
     }
 }
