@@ -2,6 +2,7 @@ use diesel::prelude::*;
 use serde::Serialize;
 
 use crate::{
+    requests::UpdateSpellRequest,
     resources::{IntoCollection, IntoResource, SpellResource},
     schema::spells,
 };
@@ -44,7 +45,7 @@ impl IntoCollection<SpellResource> for Vec<Spell> {
     }
 }
 
-#[derive(Insertable, AsChangeset)]
+#[derive(Insertable)]
 #[diesel(table_name = spells)]
 pub struct NewSpell<'a> {
     pub name: &'a str,
@@ -55,4 +56,32 @@ pub struct NewSpell<'a> {
     pub range: &'a str,
     pub duration: &'a str,
     pub description: &'a str,
+}
+
+#[derive(AsChangeset)]
+#[diesel(table_name = spells)]
+pub struct UpdatedSpell<'a> {
+    pub name: Option<&'a str>,
+    pub level: Option<&'a str>,
+    pub casting_time: Option<&'a str>,
+    pub magic_school: Option<&'a str>,
+    pub concentration: Option<bool>,
+    pub range: Option<&'a str>,
+    pub duration: Option<&'a str>,
+    pub description: Option<&'a str>,
+}
+
+impl<'a> UpdatedSpell<'a> {
+    pub fn from_request(request: &'a UpdateSpellRequest) -> Self {
+        UpdatedSpell {
+            name: request.updated_spell.name.as_deref(),
+            level: request.updated_spell.level.as_deref(),
+            casting_time: request.updated_spell.casting_time.as_deref(),
+            magic_school: request.updated_spell.magic_school.as_deref(),
+            concentration: request.updated_spell.concentration,
+            range: request.updated_spell.range.as_deref(),
+            duration: request.updated_spell.duration.as_deref(),
+            description: request.updated_spell.description.as_deref(),
+        }
+    }
 }

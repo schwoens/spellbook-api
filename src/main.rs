@@ -3,8 +3,8 @@ use axum::{Json, Router};
 use diesel::result::DatabaseErrorKind;
 use spellbook_api::{
     establish_connection,
-    models::NewSpell,
-    repositories::{self, spells::UpdatedSpell},
+    models::{NewSpell, UpdatedSpell},
+    repositories::{self},
     requests::{CreateSpellRequest, DeleteSpellRequest, GetSpellRequest, UpdateSpellRequest},
     resources::{IntoCollection, IntoResource},
 };
@@ -108,16 +108,7 @@ async fn update_spell(
         return Ok((StatusCode::BAD_REQUEST, e.to_string()).into_response());
     }
 
-    let updated_spell = UpdatedSpell {
-        name: &request.updated_spell.name,
-        level: &request.updated_spell.level,
-        casting_time: &request.updated_spell.casting_time,
-        magic_school: &request.updated_spell.magic_school,
-        concentration: request.updated_spell.concentration,
-        range: &request.updated_spell.range,
-        duration: &request.updated_spell.duration,
-        description: &request.updated_spell.duration,
-    };
+    let updated_spell = UpdatedSpell::from_request(&request);
 
     match repositories::spells::update_spell(conn, &request.name, updated_spell) {
         Ok(spell) => Ok(Json(spell.into_resource()).into_response()),

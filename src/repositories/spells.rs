@@ -1,7 +1,7 @@
 use diesel::{ExpressionMethods, PgConnection, QueryDsl, RunQueryDsl, SelectableHelper};
 
 use crate::{
-    models::{NewSpell, Spell},
+    models::{NewSpell, Spell, UpdatedSpell},
     schema::spells::{self, name},
 };
 
@@ -28,8 +28,6 @@ pub fn insert_spell(
         .returning(Spell::as_returning())
         .get_result(conn)
 }
-
-pub type UpdatedSpell<'a> = NewSpell<'a>;
 
 pub fn update_spell(
     conn: &mut PgConnection,
