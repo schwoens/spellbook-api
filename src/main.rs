@@ -1,12 +1,13 @@
-use axum::{http::StatusCode, response::IntoResponse, routing::get};
-use axum::{Json, Router};
-use diesel::result::DatabaseErrorKind;
-use spellbook_api::{
-    establish_connection,
-    models::{NewSpell, UpdatedSpell},
-    repositories::{self},
-    requests::{CreateSpellRequest, DeleteSpellRequest, GetSpellRequest, UpdateSpellRequest},
-    resources::{IntoCollection, IntoResource},
+use axum::{
+    routing::{get, post},
+    Router,
+};
+use spellbook_api::handlers::{
+    spells::{
+        delete_spell, get_spell, get_spells, post_spell, publish_spell, query_public_spells,
+        unpublish_spell, update_spell,
+    },
+    users::post_user,
 };
 
 #[tokio::main]
@@ -17,147 +18,12 @@ async fn main() {
         .route(
             "/spell",
             get(get_spell).put(update_spell).delete(delete_spell),
-        );
+        )
+        .route("/spell/publish", post(publish_spell))
+        .route("/spell/unpublish", post(unpublish_spell))
+        .route("/public/spell/query", post(query_public_spells))
+        .route("/users", post(post_user));
 
     let listener = tokio::net::TcpListener::bind("0.0.0.0:3000").await.unwrap();
     axum::serve(listener, app).await.unwrap();
-}
-
-async fn get_spells() -> Result<impl IntoResponse, StatusCode> {
-    let conn = &mut establish_connection();
-
-    match repositories::spells::get_spells(conn) {
-        Ok(spells) => Ok(Json(spells.into_collection()).into_response()),
-        Err(e) => {
-            eprintln!("error retrieving spells: {}", e);
-            Ok((StatusCode::INTERNAL_SERVER_ERROR, "error retrieving spells").into_response())
-        }
-    }
-}
-
-async fn get_spell(Json(request): Json<GetSpellRequest>) -> Result<impl IntoResponse, StatusCode> {
-    let conn = &mut establish_connection();
-
-    match repositories::spells::get_spell(conn, &request.name) {
-        Ok(spell) => Ok(Json(spell.into_resource()).into_response()),
-        Err(e) => match e {
-            diesel::result::Error::NotFound => Ok((
-                StatusCode::NOT_FOUND,
-                format!("a spell with the name \"{}\" does not exist", &request.name),
-            )
-                .into_response()),
-            _ => {
-                eprintln!("error retrieving spells: {}", e);
-                Ok((StatusCode::INTERNAL_SERVER_ERROR, "error retrieving spells").into_response())
-            }
-        },
-    }
-}
-
-async fn post_spell(
-    Json(request): Json<CreateSpellRequest>,
-) -> Result<impl IntoResponse, StatusCode> {
-    let conn = &mut establish_connection();
-
-    if let Err(e) = request.validate() {
-        return Ok((StatusCode::BAD_REQUEST, e.to_string()).into_response());
-    }
-
-    let new_spell = NewSpell {
-        name: &request.name,
-        level: &request.level,
-        casting_time: &request.casting_time,
-        magic_school: &request.magic_school,
-        concentration: request.concentration,
-        range: &request.range,
-        duration: &request.duration,
-        description: &request.description,
-    };
-
-    match repositories::spells::insert_spell(conn, new_spell) {
-        Ok(spell) => Ok(Json(spell.into_resource()).into_response()),
-        Err(e) => {
-            eprintln!("error inserting spell: {}", e);
-            match e {
-                diesel::result::Error::DatabaseError(kind, _) => {
-                    if let DatabaseErrorKind::UniqueViolation = kind {
-                        Ok((
-                            StatusCode::BAD_REQUEST,
-                            format!("a spell with the name \"{}\" already exists", request.name),
-                        )
-                            .into_response())
-                    } else {
-                        Ok((StatusCode::INTERNAL_SERVER_ERROR, "error inserting spell")
-                            .into_response())
-                    }
-                }
-                _ => Ok(
-                    (StatusCode::INTERNAL_SERVER_ERROR, "error inserting spell").into_response()
-                ),
-            }
-        }
-    }
-}
-
-async fn update_spell(
-    Json(request): Json<UpdateSpellRequest>,
-) -> Result<impl IntoResponse, StatusCode> {
-    let conn = &mut establish_connection();
-
-    if let Err(e) = request.validate() {
-        return Ok((StatusCode::BAD_REQUEST, e.to_string()).into_response());
-    }
-
-    let updated_spell = UpdatedSpell::from_request(&request);
-
-    match repositories::spells::update_spell(conn, &request.name, updated_spell) {
-        Ok(spell) => Ok(Json(spell.into_resource()).into_response()),
-        Err(e) => {
-            eprintln!("error updating spell: {}", e);
-            match e {
-                diesel::result::Error::DatabaseError(kind, _) => {
-                    match kind {
-                        DatabaseErrorKind::UniqueViolation => Ok((
-                            StatusCode::BAD_REQUEST,
-                            format!("a spell with the name \"{}\" already exists", &request.name),
-                        )
-                            .into_response()),
-                        _ => Ok((StatusCode::INTERNAL_SERVER_ERROR, "error updating spell")
-                            .into_response()),
-                    }
-                }
-                diesel::result::Error::NotFound => Ok((
-                    StatusCode::NOT_FOUND,
-                    format!("a spell with the name \"{}\" does not exist", &request.name),
-                )
-                    .into_response()),
-                _ => {
-                    Ok((StatusCode::INTERNAL_SERVER_ERROR, "error updating spell").into_response())
-                }
-            }
-        }
-    }
-}
-
-async fn delete_spell(
-    Json(request): Json<DeleteSpellRequest>,
-) -> Result<impl IntoResponse, StatusCode> {
-    let conn = &mut establish_connection();
-
-    match repositories::spells::delete_spell(conn, &request.name) {
-        Ok(1) => Ok((
-            StatusCode::OK,
-            format!("the spell \"{}\" was successfully deleted", &request.name),
-        )
-            .into_response()),
-        Ok(_) => Ok((
-            StatusCode::NOT_FOUND,
-            format!("a spell with the name \"{}\" does not exist", &request.name),
-        )
-            .into_response()),
-        Err(e) => {
-            eprintln!("error deleting spell: {}", e);
-            Ok((StatusCode::INTERNAL_SERVER_ERROR, "error deleting spell").into_response())
-        }
-    }
 }

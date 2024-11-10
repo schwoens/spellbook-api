@@ -1,13 +1,8 @@
 use diesel::prelude::*;
-use serde::Serialize;
 
-use crate::{
-    requests::UpdateSpellRequest,
-    resources::{IntoCollection, IntoResource, SpellResource},
-    schema::spells,
-};
+use crate::{requests::spells::UpdateSpellRequest, schema::spells};
 
-#[derive(Queryable, Selectable, Serialize)]
+#[derive(Queryable, Selectable, Debug)]
 #[diesel(table_name = crate::schema::spells)]
 #[diesel(check_for_backend(diesel::pg::Pg))]
 pub struct Spell {
@@ -20,29 +15,8 @@ pub struct Spell {
     pub range: String,
     pub duration: String,
     pub description: String,
-}
-
-impl IntoResource<SpellResource> for Spell {
-    fn into_resource(self) -> SpellResource {
-        SpellResource {
-            name: self.name,
-            level: self.level,
-            casting_time: self.casting_time,
-            magic_school: self.magic_school,
-            concentration: self.concentration,
-            range: self.range,
-            duration: self.duration,
-            description: self.description,
-        }
-    }
-}
-
-impl IntoCollection<SpellResource> for Vec<Spell> {
-    fn into_collection(self) -> Vec<SpellResource> {
-        self.into_iter()
-            .map(|spell| spell.into_resource())
-            .collect()
-    }
+    pub user_id: i32,
+    pub published: bool,
 }
 
 #[derive(Insertable)]
@@ -56,10 +30,13 @@ pub struct NewSpell<'a> {
     pub range: &'a str,
     pub duration: &'a str,
     pub description: &'a str,
+    pub user_id: i32,
+    pub published: bool,
 }
 
 #[derive(AsChangeset)]
 #[diesel(table_name = spells)]
+#[diesel(belongs_to(users))]
 pub struct UpdatedSpell<'a> {
     pub name: Option<&'a str>,
     pub level: Option<&'a str>,

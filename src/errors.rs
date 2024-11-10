@@ -13,3 +13,9 @@ pub enum SpellValidationError {
     )]
     InvalidMagicSchool(String),
 }
+
+#[derive(Debug, Error)]
+pub enum AuthError {
+    #[error("authentication failed")]
+    AuthError,
+}
