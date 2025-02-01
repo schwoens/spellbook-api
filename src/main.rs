@@ -1,3 +1,5 @@
+use std::env;
+
 use axum::{
     routing::{get, post},
     Router,
@@ -12,6 +14,8 @@ use spellbook_api::handlers::{
 
 #[tokio::main]
 async fn main() {
+    let port = env::var("PORT").unwrap_or("3000".to_string());
+
     let app = Router::new()
         .route("/", get(|| async { "Hello World" }))
         .route("/spells", get(get_spells).post(post_spell))
@@ -24,6 +28,9 @@ async fn main() {
         .route("/public/spell/query", post(query_public_spells))
         .route("/users", post(post_user));
 
-    let listener = tokio::net::TcpListener::bind("0.0.0.0:3000").await.unwrap();
+    let listener = tokio::net::TcpListener::bind(format!("0.0.0.0:{}", port))
+        .await
+        .unwrap();
+    println!("listening on port {}...", port);
     axum::serve(listener, app).await.unwrap();
 }

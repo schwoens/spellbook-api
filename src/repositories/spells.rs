@@ -1,6 +1,6 @@
 use diesel::{
-    ExpressionMethods, JoinOnDsl, NullableExpressionMethods, PgConnection, PgTextExpressionMethods,
-    QueryDsl, RunQueryDsl, SelectableHelper,
+    ExpressionMethods, PgConnection, PgTextExpressionMethods, QueryDsl, RunQueryDsl,
+    SelectableHelper,
 };
 
 use crate::{
