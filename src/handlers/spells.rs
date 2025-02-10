@@ -70,12 +70,12 @@ pub async fn post_spell(
     };
 
     if let Err(e) = request.validate() {
-        return Ok((StatusCode::BAD_REQUEST, e.to_string()).into_response());
+        return Ok((StatusCode::UNPROCESSABLE_ENTITY, e.to_string()).into_response());
     }
 
     if let Ok(spell) = repositories::spells::get_spell(conn, user_id, &request.name) {
         return Ok((
-            StatusCode::BAD_REQUEST,
+            StatusCode::UNPROCESSABLE_ENTITY,
             format!(
                 "You already have a spell with the name \"{}\" in your spellbook.",
                 spell.name

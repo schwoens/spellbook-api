@@ -1,0 +1,270 @@
+openapi: 3.0.3
+info:
+  title: Spellbook API - OpenAPI 3.0
+  version: 0.1.0
+  description: |-
+    This is a description
+
+servers:
+  - url: localhost:3000
+tags:
+  - name: Users
+    description: Users
+  - name: Spells
+    description: Spells
+  - name: Spell
+    description: Spell
+paths:
+  /users:
+    post:
+      tags:
+        - Users
+      summary: Create a user
+      description: Create a user
+      operationId: createUser
+      requestBody:
+        description: Create a user
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                username:
+                  type: string
+                  example: Elminster
+        required: true
+      responses:
+        "200":
+          description: User successfully created
+          content:
+            text/plain; charset=utf-8:
+              schema:
+                type: string
+                example: "Welcome Elminster! Your api key is: xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx Don't lose it!"
+        "400":
+          $ref: "#/components/schemas/400Response"
+        "422":
+          description: Username already taken or no username given
+          content:
+            text/plain; charset=utf-8:
+              schema:
+                type: string
+                example: 'The username "<username>" is already taken'
+        "500":
+          description: Database error
+  /spells:
+    post:
+      tags:
+        - Spells
+      summary: Add a new spell to your spellbook
+      description: Add a new spell to your spellbook
+      operationId: createSpell
+      requestBody:
+        description: Add a new spell to your spellbook
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+                  example: Fireball
+                level:
+                  type: string
+                  example: Level 3
+                  pattern: "^Level [1-9]$|^Cantrip$"
+                casting_time:
+                  type: string
+                  example: Action
+                magic_school:
+                  $ref: "#/components/schemas/MagicSchool"
+                concentration:
+                  type: bool
+                  example: false
+                range:
+                  type: string
+                  example: 150 feet
+                duration:
+                  type: string
+                  example: Instantaneous
+                description:
+                  type: string
+                  example:
+                    "A bright streak flashes from you to a point you choose within range and then blossoms with a low roar into a fiery explosion. Each creature in a 20-foot-radius Sphere centered on that point makes a Dexterity saving throw, taking 8d6 Fire damage on a failed save or half as much damage on a successful one.
+                    Flammable objects in the area that aren't being worn or carried start burning.
+                    Using a Higher-Level Spell Slot. The damage increases by 1d6 for each spell slot level above 3."
+        required: true
+      responses:
+        "200":
+          description: Spell successfully added
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  name:
+                    type: string
+                    example: Fireball
+                  level:
+                    type: string
+                    pattern: "^Level [1-9]$|^Cantrip$"
+                    example: Level 3
+                  casting_time:
+                    type: string
+                    example: Action
+                  magic_school:
+                    $ref: "#/components/schemas/MagicSchool"
+                  concentration:
+                    type: bool
+                    example: false
+                  range:
+                    type: string
+                    example: 150 feet
+                  duration:
+                    type: string
+                    example: Instantaneous
+                  published:
+                    type: bool
+                    example: false
+        "400":
+          $ref: "#/components/schemas/400Response"
+        "403":
+          $ref: "#/components/schemas/403Response"
+        "422":
+          description: Duplicate spell or missing/invalid fields
+          content:
+            text/plain; charset=utf-8:
+              schema:
+                type: string
+                example: 'You already have a spell with the name "Fireball" in your spellbook.'
+        "500":
+          description: Database error
+  /spell:
+    put:
+      tags:
+        - Spell
+      summary: Update a spell in your spellbook
+      description: Update a spell in your spellbook
+      operationId: updateSpell
+      requestBody:
+        description: Update a spell in your spellbook
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateSpellRequest"
+        required: true
+      responses:
+        "200":
+          description: Spell successfully updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SpellResponse"
+        "400":
+          $ref: "#/components/schemas/400Response"
+        "403":
+          $ref: "#/components/schemas/403Response"
+        "404":
+          description: Spell not found
+          content:
+            text/plain; charset=utf-8:
+              schema:
+                type: string
+                example: You don't have a spell with the name "Invisibility" in your spellbook.
+        "422":
+          description: Duplicate spell or missing/invalid fields
+          content:
+            text/plain; charset=utf-8:
+              schema:
+                type: string
+                example: 'You already have a spell with the name "Fireball" in your spellbook.'
+        "500":
+          description: Database error
+components:
+  schemas:
+    UpdateSpellRequest:
+      type: object
+      properties:
+        name:
+          type: string
+          example: Cage Hand
+        updated_spell:
+          type: object
+          properties:
+            name:
+              type: string
+              example: Mage Hand
+            level:
+              type: string
+              example: Cantrip
+              pattern: "^Level [1-9]$|^Cantrip$"
+            casting_time:
+              type: string
+              example: Action
+            magic_school:
+              $ref: "#/components/schemas/MagicSchool"
+            concentration:
+              type: bool
+              example: false
+            range:
+              type: string
+              example: 30 feet
+            duration:
+              type: string
+              example: 1 minute
+            description:
+              type: string
+              example: "A spectral, floating hand appears at a point you choose within range. The hand lasts for the duration. The hand vanishes if it is ever more than 30 feet away from you or if you cast this spell again."
+    SpellResponse:
+      type: object
+      properties:
+        name:
+          type: string
+          example: Fireball
+        level:
+          type: string
+          pattern: "^Level [1-9]$|^Cantrip$"
+          example: Level 3
+        casting_time:
+          type: string
+          example: Action
+        magic_school:
+          $ref: "#/components/schemas/MagicSchool"
+        concentration:
+          type: bool
+          example: false
+        range:
+          type: string
+          example: 150 feet
+        duration:
+          type: string
+          example: Instantaneous
+        published:
+          type: bool
+          example: false
+    400Response:
+      description: Missing or invalid JSON body
+      content:
+        text/plain; charset=utf-8:
+          schema:
+            type: string
+            example: "Failed to parse the request body as JSON: EOF while parsing a value at line 1 column 0"
+    403Response:
+      description: Authentification failed
+      content:
+        text/plain; charset=utf-8:
+          schema:
+            type: string
+            example: Authentification failed
+
+    MagicSchool:
+      type: string
+      enum:
+        - Abjuration
+        - Conjuration
+        - Divination
+        - Enchantment
+        - Evocation
+        - Illusion
+        - Necromancy
+        - Transmutation

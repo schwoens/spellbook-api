@@ -16,6 +16,6 @@ pub enum SpellValidationError {
 
 #[derive(Debug, Error)]
 pub enum AuthError {
-    #[error("authentication failed")]
+    #[error("Authentication failed")]
     AuthError,
 }

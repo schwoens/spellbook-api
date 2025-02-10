@@ -31,7 +31,7 @@ pub async fn post_user(
                 diesel::result::Error::DatabaseError(kind, _) => {
                     match kind {
                         DatabaseErrorKind::UniqueViolation => Ok((
-                            StatusCode::BAD_REQUEST,
+                            StatusCode::UNPROCESSABLE_ENTITY,
                             format!("the username \"{}\" is already taken", &request.username),
                         )
                             .into_response()),
@@ -46,4 +46,3 @@ pub async fn post_user(
         }
     }
 }
-
