@@ -18,7 +18,6 @@ async fn main() {
     let port = env::var("PORT").unwrap_or("3000".to_string());
 
     let app = Router::new()
-        .route("/", get(|| async { "Hello World" }))
         .route("/spells", get(get_spells).post(post_spell))
         .route(
             "/spell",

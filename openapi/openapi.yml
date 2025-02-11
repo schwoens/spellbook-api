@@ -9,11 +9,13 @@ servers:
   - url: localhost:3000
 tags:
   - name: Users
-    description: Users
+    description: Register as a user
   - name: Spells
-    description: Spells
+    description: Add spells to your spellbook and read them
   - name: Spell
-    description: Spell
+    description: Read, update or erase spells from your spellbook or publish them
+  - name: Public
+    description: Look for spells other users posted and copy them to your spellbook
 paths:
   /users:
     post:
@@ -139,6 +141,23 @@ paths:
                 example: 'You already have a spell with the name "Fireball" in your spellbook.'
         "500":
           description: Database error
+    get:
+      tags:
+        - Spells
+      summary: Get all the spells from your spellbook
+      description: Get all the spells from your spellbook
+      operationId: getSpells
+      responses:
+        "200":
+          description: Spells fetched successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/GetSpellsResponse"
+        "403":
+          $ref: "#/components/schemas/403Response"
+        "500":
+          description: Database error
   /spell:
     put:
       tags:
@@ -180,8 +199,173 @@ paths:
                 example: 'You already have a spell with the name "Fireball" in your spellbook.'
         "500":
           description: Database error
+    get:
+      tags:
+        - Spell
+      summary: Get a spell from your spellbook
+      description: Get a spell from your spellbook
+      operationId: getSpell
+      requestBody:
+        description: Get a spell from your spellbook
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/GetSpellRequest"
+        required: true
+      responses:
+        "200":
+          description: Spell fetched successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SpellResponse"
+        "400":
+          $ref: "#/components/schemas/400Response"
+        "403":
+          $ref: "#/components/schemas/403Response"
+        "404":
+          description: Spell not found
+          content:
+            text/plain; charset=utf-8:
+              schema:
+                type: string
+                example: You don't have a spell with the name "Invisibility" in your spellbook.
+        "422":
+          description: Missing name field
+          content:
+            text/plain; charset=utf-8:
+              schema:
+                type: string
+                example: "Failed to deserialize the JSON body into the target type: missing field `name` at line 2 column 1"
+        "500":
+          description: Database error
+    delete:
+      tags:
+        - Spell
+      summary: Erase a spell from your spellbook
+      description: Erase a spell from your spellbook
+      operationId: deleteSpell
+      requestBody:
+        description: Erase a spell from your spellbook
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/GetSpellRequest"
+        required: true
+      responses:
+        "200":
+          description: Spell erased successfully
+          content:
+            text/plain; charset=utf-8:
+              schema:
+                type: string
+                example: The spell "Invisibility" was successfully erased from your spellbook.
+        "400":
+          $ref: "#/components/schemas/400Response"
+        "403":
+          $ref: "#/components/schemas/403Response"
+        "404":
+          description: Spell not found
+          content:
+            text/plain; charset=utf-8:
+              schema:
+                type: string
+                example: You don't have a spell with the name "Invisibility" in your spellbook.
+        "422":
+          description: Missing name field
+          content:
+            text/plain; charset=utf-8:
+              schema:
+                type: string
+                example: "Failed to deserialize the JSON body into the target type: missing field `name` at line 2 column 1"
+        "500":
+          description: Database error
+  /spell/publish:
+    post:
+      tags:
+        - Spell
+      summary: Publish a spell from your spellbook
+      description: Publish a spell from your spellbook
+      operationId: publishSpell
+      requestBody:
+        description: Publish a spell from your spellbook
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/GetSpellRequest"
+        required: true
+      responses:
+        "200":
+          description: Spell published successfully
+          content:
+            text/plain; charset=utf-8:
+              schema:
+                type: string
+                example: Your spell "Fly" was successfully published.
+        "400":
+          $ref: "#/components/schemas/400Response"
+        "403":
+          $ref: "#/components/schemas/403Response"
+        "404":
+          $ref: "#/components/schemas/404Response"
+        "422":
+          description: Spell already published or missing name field
+          content:
+            text/plain; charset=utf-8:
+              schema:
+                type: string
+                example: 'Your spell "Fly" is already published.'
+        "500":
+          description: Database error
+  /spell/unpublish:
+    post:
+      tags:
+        - Spell
+      summary: Unpublish one of your published spells
+      description: Unpublish one of your published spells
+      operationId: unpublishSpell
+      requestBody:
+        description: Unpublish one of your published spells
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/GetSpellRequest"
+        required: true
+      responses:
+        "200":
+          description: Spell unpublished successfully
+          content:
+            text/plain; charset=utf-8:
+              schema:
+                type: string
+                example: Your spell "Fly" was successfully unpublished.
+        "400":
+          $ref: "#/components/schemas/400Response"
+        "403":
+          $ref: "#/components/schemas/403Response"
+        "404":
+          $ref: "#/components/schemas/404Response"
+        "422":
+          description: Spell not published or missing name field
+          content:
+            text/plain; charset=utf-8:
+              schema:
+                type: string
+                example: 'Your spell "Fly" is not published.'
+        "500":
+          description: Database error
 components:
   schemas:
+    GetSpellsResponse:
+      type: array
+      items:
+        $ref: "#/components/schemas/SpellResponse"
+    GetSpellRequest:
+      type: object
+      properties:
+        name:
+          type: string
+          example: Invisibility
     UpdateSpellRequest:
       type: object
       properties:
@@ -256,6 +440,13 @@ components:
           schema:
             type: string
             example: Authentification failed
+    404Response:
+      description: Spell not found
+      content:
+        text/plain; charset=utf-8:
+          schema:
+            type: string
+            example: You don't have a spell with the name "Invisibility" in your spellbook.
 
     MagicSchool:
       type: string

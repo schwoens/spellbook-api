@@ -200,7 +200,7 @@ pub async fn publish_spell(
 
     if repositories::spells::is_published(conn, user_id, &request.name).is_ok_and(|x| x) {
         return Ok((
-            StatusCode::BAD_REQUEST,
+            StatusCode::UNPROCESSABLE_ENTITY,
             format!("Your spell \"{}\" is already published.", &request.name),
         )
             .into_response());
