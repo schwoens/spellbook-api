@@ -7,12 +7,12 @@ use std::{
 use axum::http::HeaderMap;
 use diesel::{Connection, PgConnection};
 use dotenvy::dotenv;
-
-use crate::errors::AuthError;
+use errors::AuthError;
 
 pub mod enums;
 pub mod errors;
 pub mod handlers;
+pub mod middleware;
 pub mod models;
 pub mod repositories;
 pub mod requests;

@@ -1,12 +1,6 @@
-use axum::{
-    http::{HeaderMap, StatusCode},
-    response::IntoResponse,
-    Json,
-};
+use axum::{http::StatusCode, response::IntoResponse, Extension, Json};
 
 use crate::{
-    authenticate,
-    errors::AuthError,
     establish_connection,
     models::spells::{NewSpell, UpdatedSpell},
     repositories,
@@ -17,13 +11,10 @@ use crate::{
     IntoCollection, IntoResource, Validate,
 };
 
-pub async fn get_spells(headers: HeaderMap) -> Result<impl IntoResponse, StatusCode> {
+pub async fn get_spells(
+    Extension(user_id): Extension<i32>,
+) -> Result<impl IntoResponse, StatusCode> {
     let conn = &mut establish_connection();
-
-    let Ok(user_id) = authenticate(conn, headers) else {
-        return Ok((StatusCode::FORBIDDEN, AuthError::AuthError.to_string()).into_response());
-    };
-
     match repositories::spells::get_spells(conn, user_id) {
         Ok(spells) => Ok(Json(spells.into_collection()).into_response()),
         Err(e) => {
@@ -34,14 +25,10 @@ pub async fn get_spells(headers: HeaderMap) -> Result<impl IntoResponse, StatusC
 }
 
 pub async fn get_spell(
-    headers: HeaderMap,
+    Extension(user_id): Extension<i32>,
     Json(request): Json<GetSpellRequest>,
 ) -> Result<impl IntoResponse, StatusCode> {
     let conn = &mut establish_connection();
-
-    let Ok(user_id) = authenticate(conn, headers) else {
-        return Ok((StatusCode::FORBIDDEN, AuthError::AuthError.to_string()).into_response());
-    };
 
     match repositories::spells::get_spell(conn, user_id, &request.name) {
         Ok(spell) => Ok(Json(spell.into_resource()).into_response()),
@@ -60,14 +47,10 @@ pub async fn get_spell(
 }
 
 pub async fn post_spell(
-    headers: HeaderMap,
+    Extension(user_id): Extension<i32>,
     Json(request): Json<CreateSpellRequest>,
 ) -> Result<impl IntoResponse, StatusCode> {
     let conn = &mut establish_connection();
-
-    let Ok(user_id) = authenticate(conn, headers) else {
-        return Ok((StatusCode::FORBIDDEN, AuthError::AuthError.to_string()).into_response());
-    };
 
     if let Err(e) = request.validate() {
         return Ok((StatusCode::UNPROCESSABLE_ENTITY, e.to_string()).into_response());
@@ -107,14 +90,10 @@ pub async fn post_spell(
 }
 
 pub async fn update_spell(
-    headers: HeaderMap,
+    Extension(user_id): Extension<i32>,
     Json(request): Json<UpdateSpellRequest>,
 ) -> Result<impl IntoResponse, StatusCode> {
     let conn = &mut establish_connection();
-
-    let Ok(user_id) = authenticate(conn, headers) else {
-        return Ok((StatusCode::FORBIDDEN, AuthError::AuthError.to_string()).into_response());
-    };
 
     if let Err(e) = request.validate() {
         return Ok((StatusCode::BAD_REQUEST, e.to_string()).into_response());
@@ -155,14 +134,10 @@ pub async fn update_spell(
 }
 
 pub async fn delete_spell(
-    headers: HeaderMap,
+    Extension(user_id): Extension<i32>,
     Json(request): Json<DeleteSpellRequest>,
 ) -> Result<impl IntoResponse, StatusCode> {
     let conn = &mut establish_connection();
-
-    let Ok(user_id) = authenticate(conn, headers) else {
-        return Ok((StatusCode::FORBIDDEN, AuthError::AuthError.to_string()).into_response());
-    };
 
     match repositories::spells::delete_spell(conn, user_id, &request.name) {
         Ok(1) => Ok((
@@ -189,14 +164,10 @@ pub async fn delete_spell(
 }
 
 pub async fn publish_spell(
-    headers: HeaderMap,
+    Extension(user_id): Extension<i32>,
     Json(request): Json<PublishSpellRequest>,
 ) -> Result<impl IntoResponse, StatusCode> {
     let conn = &mut establish_connection();
-
-    let Ok(user_id) = authenticate(conn, headers) else {
-        return Ok((StatusCode::FORBIDDEN, AuthError::AuthError.to_string()).into_response());
-    };
 
     if repositories::spells::is_published(conn, user_id, &request.name).is_ok_and(|x| x) {
         return Ok((
@@ -228,14 +199,10 @@ pub async fn publish_spell(
 }
 
 pub async fn unpublish_spell(
-    headers: HeaderMap,
+    Extension(user_id): Extension<i32>,
     Json(request): Json<PublishSpellRequest>,
 ) -> Result<impl IntoResponse, StatusCode> {
     let conn = &mut establish_connection();
-
-    let Ok(user_id) = authenticate(conn, headers) else {
-        return Ok((StatusCode::FORBIDDEN, AuthError::AuthError.to_string()).into_response());
-    };
 
     if !repositories::spells::is_published(conn, user_id, &request.name).is_ok_and(|x| x) {
         return Ok((
@@ -274,14 +241,9 @@ pub async fn unpublish_spell(
 }
 
 pub async fn query_public_spells(
-    headers: HeaderMap,
     Json(request): Json<GetPublicSpellRequest>,
 ) -> Result<impl IntoResponse, StatusCode> {
     let conn = &mut establish_connection();
-
-    let Ok(_) = authenticate(conn, headers) else {
-        return Ok((StatusCode::FORBIDDEN, AuthError::AuthError.to_string()).into_response());
-    };
 
     match repositories::spells::query_public_spells(conn, &request.keyword) {
         Ok(spells_with_users) => Ok(Json(spells_with_users.into_collection()).into_response()),

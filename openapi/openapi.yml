@@ -6,7 +6,7 @@ info:
     This is a description
 
 servers:
-  - url: localhost:3000
+  - url: http://localhost:3000
 tags:
   - name: Users
     description: Register as a user

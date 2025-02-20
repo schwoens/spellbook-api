@@ -1,6 +1,7 @@
 use std::env;
 
 use axum::{
+    middleware,
     routing::{get, post},
     Router,
 };
@@ -11,7 +12,6 @@ use spellbook_api::handlers::{
     },
     users::post_user,
 };
-use tower_http::cors::{Any, CorsLayer};
 
 #[tokio::main]
 async fn main() {
@@ -26,8 +26,8 @@ async fn main() {
         .route("/spell/publish", post(publish_spell))
         .route("/spell/unpublish", post(unpublish_spell))
         .route("/public/spell/query", post(query_public_spells))
-        .route("/users", post(post_user))
-        .layer(CorsLayer::new().allow_origin(Any));
+        .layer(middleware::from_fn(spellbook_api::middleware::auth))
+        .route("/users", post(post_user));
 
     let listener = tokio::net::TcpListener::bind(format!("0.0.0.0:{}", port))
         .await
