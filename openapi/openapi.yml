@@ -61,6 +61,8 @@ paths:
       summary: Add a new spell to your spellbook
       description: Add a new spell to your spellbook
       operationId: createSpell
+      security:
+        - api_key: []
       requestBody:
         description: Add a new spell to your spellbook
         content:
@@ -147,6 +149,8 @@ paths:
       summary: Get all the spells from your spellbook
       description: Get all the spells from your spellbook
       operationId: getSpells
+      security:
+        - api_key: []
       responses:
         "200":
           description: Spells fetched successfully
@@ -158,15 +162,24 @@ paths:
           $ref: "#/components/schemas/403Response"
         "500":
           description: Database error
-  /spell:
+  /spell/{spell_id}:
     put:
       tags:
         - Spell
       summary: Update a spell in your spellbook
       description: Update a spell in your spellbook
       operationId: updateSpell
+      security:
+        - api_key: []
+      parameters:
+        - name: spell_id
+          in: path
+          description: ID of the spell to update
+          required: true
+          schema:
+            type: string
       requestBody:
-        description: Update a spell in your spellbook
+        description: Updated spell data. All fields are optional.
         content:
           application/json:
             schema:
@@ -205,13 +218,15 @@ paths:
       summary: Get a spell from your spellbook
       description: Get a spell from your spellbook
       operationId: getSpell
-      requestBody:
-        description: Get a spell from your spellbook
-        content:
-          application/json:
-            schema:
-              $ref: "#/components/schemas/GetSpellRequest"
-        required: true
+      security:
+        - api_key: []
+      parameters:
+        - name: spell_id
+          in: path
+          description: ID of the spell to fetch
+          required: true
+          schema:
+            type: string
       responses:
         "200":
           description: Spell fetched successfully
@@ -245,13 +260,15 @@ paths:
       summary: Erase a spell from your spellbook
       description: Erase a spell from your spellbook
       operationId: deleteSpell
-      requestBody:
-        description: Erase a spell from your spellbook
-        content:
-          application/json:
-            schema:
-              $ref: "#/components/schemas/GetSpellRequest"
-        required: true
+      security:
+        - api_key: []
+      parameters:
+        - name: spell_id
+          in: path
+          description: ID of the spell to erase from your spellbook.
+          required: true
+          schema:
+            type: string
       responses:
         "200":
           description: Spell erased successfully
@@ -371,34 +388,28 @@ components:
       properties:
         name:
           type: string
-          example: Cage Hand
-        updated_spell:
-          type: object
-          properties:
-            name:
-              type: string
-              example: Mage Hand
-            level:
-              type: string
-              example: Cantrip
-              pattern: "^Level [1-9]$|^Cantrip$"
-            casting_time:
-              type: string
-              example: Action
-            magic_school:
-              $ref: "#/components/schemas/MagicSchool"
-            concentration:
-              type: bool
-              example: false
-            range:
-              type: string
-              example: 30 feet
-            duration:
-              type: string
-              example: 1 minute
-            description:
-              type: string
-              example: "A spectral, floating hand appears at a point you choose within range. The hand lasts for the duration. The hand vanishes if it is ever more than 30 feet away from you or if you cast this spell again."
+          example: Mage Hand
+        level:
+          type: string
+          example: Cantrip
+          pattern: "^Level [1-9]$|^Cantrip$"
+        casting_time:
+          type: string
+          example: Action
+        magic_school:
+          $ref: "#/components/schemas/MagicSchool"
+        concentration:
+          type: bool
+          example: false
+        range:
+          type: string
+          example: 30 feet
+        duration:
+          type: string
+          example: 1 minute
+        description:
+          type: string
+          example: "A spectral, floating hand appears at a point you choose within range. The hand lasts for the duration. The hand vanishes if it is ever more than 30 feet away from you or if you cast this spell again."
     SpellResponse:
       type: object
       properties:
@@ -459,3 +470,8 @@ components:
         - Illusion
         - Necromancy
         - Transmutation
+  securitySchemes:
+    api_key:
+      type: apiKey
+      name: AUTHORIZATION
+      in: header

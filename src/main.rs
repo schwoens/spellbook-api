@@ -20,7 +20,7 @@ async fn main() {
     let app = Router::new()
         .route("/spells", get(get_spells).post(post_spell))
         .route(
-            "/spell",
+            "/spell/:nanoid",
             get(get_spell).put(update_spell).delete(delete_spell),
         )
         .route("/spell/publish", post(publish_spell))

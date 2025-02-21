@@ -13,6 +13,7 @@ diesel::table! {
         description -> Text,
         user_id -> Int4,
         published -> Bool,
+        nanoid -> Varchar,
     }
 }
 

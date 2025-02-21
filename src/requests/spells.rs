@@ -1,7 +1,5 @@
 use serde::Deserialize;
 
-use crate::{errors::SpellValidationError, Validate};
-
 #[derive(Deserialize)]
 pub struct GetSpellRequest {
     pub name: String,
@@ -31,17 +29,7 @@ pub struct UpdatedSpellData {
     pub description: Option<String>,
 }
 
-#[derive(Deserialize)]
-pub struct UpdateSpellRequest {
-    pub name: String,
-    pub updated_spell: UpdatedSpellData,
-}
-
-impl UpdateSpellRequest {
-    pub fn validate(&self) -> Result<(), SpellValidationError> {
-        self.updated_spell.validate()
-    }
-}
+pub type UpdateSpellRequest = UpdatedSpellData;
 
 #[derive(Deserialize)]
 pub struct DeleteSpellRequest {

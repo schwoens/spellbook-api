@@ -1,12 +1,12 @@
-use axum::{http::StatusCode, response::IntoResponse, Extension, Json};
+use axum::{extract::Path, http::StatusCode, response::IntoResponse, Extension, Json};
+use nanoid::nanoid;
 
 use crate::{
     establish_connection,
     models::spells::{NewSpell, UpdatedSpell},
     repositories,
     requests::spells::{
-        CreateSpellRequest, DeleteSpellRequest, GetPublicSpellRequest, GetSpellRequest,
-        PublishSpellRequest, UpdateSpellRequest,
+        CreateSpellRequest, GetPublicSpellRequest, PublishSpellRequest, UpdateSpellRequest,
     },
     IntoCollection, IntoResource, Validate,
 };
@@ -26,21 +26,21 @@ pub async fn get_spells(
 
 pub async fn get_spell(
     Extension(user_id): Extension<i32>,
-    Json(request): Json<GetSpellRequest>,
+    Path(nanoid): Path<String>,
 ) -> Result<impl IntoResponse, StatusCode> {
     let conn = &mut establish_connection();
 
-    match repositories::spells::get_spell(conn, user_id, &request.name) {
+    match repositories::spells::get_spell_by_nanoid(conn, user_id, &nanoid) {
         Ok(spell) => Ok(Json(spell.into_resource()).into_response()),
         Err(e) => match e {
             diesel::result::Error::NotFound => Ok((
                 StatusCode::NOT_FOUND,
-                format!("a spell with the name \"{}\" does not exist", &request.name),
+                "You don't have a spell with this id in your spellbook.",
             )
                 .into_response()),
             _ => {
-                eprintln!("error retrieving spells: {}", e);
-                Ok((StatusCode::INTERNAL_SERVER_ERROR, "error retrieving spells").into_response())
+                eprintln!("error retrieving spell: {}", e);
+                Ok((StatusCode::INTERNAL_SERVER_ERROR, "error retrieving spell").into_response())
             }
         },
     }
@@ -56,7 +56,8 @@ pub async fn post_spell(
         return Ok((StatusCode::UNPROCESSABLE_ENTITY, e.to_string()).into_response());
     }
 
-    if let Ok(spell) = repositories::spells::get_spell(conn, user_id, &request.name) {
+    // check if a spell with that name already exists in this users' spellbook
+    if let Ok(spell) = repositories::spells::get_spell_by_name(conn, user_id, &request.name) {
         return Ok((
             StatusCode::UNPROCESSABLE_ENTITY,
             format!(
@@ -78,6 +79,7 @@ pub async fn post_spell(
         description: &request.description,
         user_id,
         published: false,
+        nanoid: &nanoid!(),
     };
 
     match repositories::spells::insert_spell(conn, new_spell) {
@@ -91,19 +93,20 @@ pub async fn post_spell(
 
 pub async fn update_spell(
     Extension(user_id): Extension<i32>,
+    Path(nanoid): Path<String>,
     Json(request): Json<UpdateSpellRequest>,
 ) -> Result<impl IntoResponse, StatusCode> {
     let conn = &mut establish_connection();
 
     if let Err(e) = request.validate() {
-        return Ok((StatusCode::BAD_REQUEST, e.to_string()).into_response());
+        return Ok((StatusCode::UNPROCESSABLE_ENTITY, e.to_string()).into_response());
     }
 
-    if let Some(new_name) = &request.updated_spell.name {
-        if let Ok(spell) = repositories::spells::get_spell(conn, user_id, new_name) {
-            if spell.name.to_lowercase() != request.name.to_lowercase() {
+    if let Some(new_name) = &request.name {
+        if let Ok(spell) = repositories::spells::get_spell_by_name(conn, user_id, new_name) {
+            if spell.nanoid != nanoid {
                 return Ok((
-                    StatusCode::BAD_REQUEST,
+                    StatusCode::UNPROCESSABLE_ENTITY,
                     format!(
                         "You already have a spell with the name \"{}\" in your spellbook.",
                         spell.name
@@ -116,14 +119,11 @@ pub async fn update_spell(
 
     let updated_spell = UpdatedSpell::from_request(&request);
 
-    match repositories::spells::update_spell(conn, user_id, &request.name, updated_spell) {
+    match repositories::spells::update_spell(conn, user_id, nanoid, updated_spell) {
         Ok(spell) => Ok(Json(spell.into_resource()).into_response()),
         Err(diesel::result::Error::NotFound) => Ok((
             StatusCode::NOT_FOUND,
-            format!(
-                "You don't have a spell with the name \"{}\" in your spellbook.",
-                &request.name
-            ),
+            "You don't have a spell with this id in your spellbook.",
         )
             .into_response()),
         Err(e) => {
@@ -135,25 +135,19 @@ pub async fn update_spell(
 
 pub async fn delete_spell(
     Extension(user_id): Extension<i32>,
-    Json(request): Json<DeleteSpellRequest>,
+    Path(nanoid): Path<String>,
 ) -> Result<impl IntoResponse, StatusCode> {
     let conn = &mut establish_connection();
 
-    match repositories::spells::delete_spell(conn, user_id, &request.name) {
+    match repositories::spells::delete_spell(conn, user_id, &nanoid) {
         Ok(1) => Ok((
             StatusCode::OK,
-            format!(
-                "The spell \"{}\" was successfully erased from your spellbook.",
-                &request.name
-            ),
+            "The spell was successfully erased from your spellbook.",
         )
             .into_response()),
         Ok(_) => Ok((
             StatusCode::NOT_FOUND,
-            format!(
-                "You don't have a spell with the name \"{}\" in your spellbook.",
-                &request.name
-            ),
+            "You don't have a spell with this id in your spellbook.",
         )
             .into_response()),
         Err(e) => {

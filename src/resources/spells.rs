@@ -7,6 +7,7 @@ use crate::{
 
 #[derive(Serialize)]
 pub struct SpellResource {
+    pub id: String,
     pub name: String,
     pub level: String,
     pub casting_time: String,
@@ -21,6 +22,7 @@ pub struct SpellResource {
 impl IntoResource<SpellResource> for Spell {
     fn into_resource(self) -> SpellResource {
         SpellResource {
+            id: self.nanoid,
             name: self.name,
             level: self.level,
             casting_time: self.casting_time,

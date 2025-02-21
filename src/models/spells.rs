@@ -17,6 +17,7 @@ pub struct Spell {
     pub description: String,
     pub user_id: i32,
     pub published: bool,
+    pub nanoid: String,
 }
 
 #[derive(Insertable)]
@@ -32,6 +33,7 @@ pub struct NewSpell<'a> {
     pub description: &'a str,
     pub user_id: i32,
     pub published: bool,
+    pub nanoid: &'a str,
 }
 
 #[derive(AsChangeset)]
@@ -51,14 +53,14 @@ pub struct UpdatedSpell<'a> {
 impl<'a> UpdatedSpell<'a> {
     pub fn from_request(request: &'a UpdateSpellRequest) -> Self {
         UpdatedSpell {
-            name: request.updated_spell.name.as_deref(),
-            level: request.updated_spell.level.as_deref(),
-            casting_time: request.updated_spell.casting_time.as_deref(),
-            magic_school: request.updated_spell.magic_school.as_deref(),
-            concentration: request.updated_spell.concentration,
-            range: request.updated_spell.range.as_deref(),
-            duration: request.updated_spell.duration.as_deref(),
-            description: request.updated_spell.description.as_deref(),
+            name: request.name.as_deref(),
+            level: request.level.as_deref(),
+            casting_time: request.casting_time.as_deref(),
+            magic_school: request.magic_school.as_deref(),
+            concentration: request.concentration,
+            range: request.range.as_deref(),
+            duration: request.duration.as_deref(),
+            description: request.description.as_deref(),
         }
     }
 }
