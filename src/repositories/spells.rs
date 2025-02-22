@@ -8,6 +8,7 @@ use crate::{
         spells::{NewSpell, Spell, UpdatedSpell},
         users::User,
     },
+    requests::spells::QuerySpellRequest,
     schema::{
         spells::{self, name, nanoid, published, user_id},
         users,
@@ -83,15 +84,22 @@ pub fn delete_spell(
 pub fn publish_spell(
     conn: &mut PgConnection,
     u_id: i32,
-    spell_name: &str,
+    n_id: &str,
     publish: bool,
 ) -> Result<Spell, diesel::result::Error> {
     diesel::update(spells::table)
         .filter(user_id.eq(u_id))
-        .filter(name.ilike(spell_name))
+        .filter(nanoid.eq(n_id))
         .set(published.eq(publish))
         .returning(Spell::as_returning())
         .get_result(conn)
+}
+
+pub fn query_spells(
+    conn: &mut PgConnection,
+    query: QuerySpellRequest,
+) -> Result<Vec<Spell>, diesel::result::Error> {
+    spells::table.filter(name.ilike(format!("%{}%", query.name)))
 }
 
 pub fn query_public_spells(
@@ -109,12 +117,12 @@ pub fn query_public_spells(
 pub fn is_published(
     conn: &mut PgConnection,
     u_id: i32,
-    spell_name: &str,
+    n_id: &str,
 ) -> Result<bool, diesel::result::Error> {
     spells::table
         .select(Spell::as_select())
         .filter(user_id.eq(u_id))
-        .filter(name.ilike(spell_name))
+        .filter(nanoid.eq(n_id))
         .get_result(conn)
         .map(|s| s.published)
 }

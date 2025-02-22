@@ -297,20 +297,21 @@ paths:
                 example: "Failed to deserialize the JSON body into the target type: missing field `name` at line 2 column 1"
         "500":
           description: Database error
-  /spell/publish:
-    post:
+  /spell/publish/{spell_id}:
+    patch:
       tags:
         - Spell
       summary: Publish a spell from your spellbook
       description: Publish a spell from your spellbook
-      operationId: publishSpell
-      requestBody:
-        description: Publish a spell from your spellbook
-        content:
-          application/json:
-            schema:
-              $ref: "#/components/schemas/GetSpellRequest"
-        required: true
+      security:
+        - api_key: []
+      parameters:
+        - name: spell_id
+          in: path
+          description: ID of the spell to publish
+          required: true
+          schema:
+            type: string
       responses:
         "200":
           description: Spell published successfully
@@ -326,7 +327,7 @@ paths:
         "404":
           $ref: "#/components/schemas/404Response"
         "422":
-          description: Spell already published or missing name field
+          description: Spell already published
           content:
             text/plain; charset=utf-8:
               schema:
@@ -334,20 +335,22 @@ paths:
                 example: 'Your spell "Fly" is already published.'
         "500":
           description: Database error
-  /spell/unpublish:
-    post:
+  /spell/unpublish/{spell_id}:
+    patch:
       tags:
         - Spell
       summary: Unpublish one of your published spells
       description: Unpublish one of your published spells
       operationId: unpublishSpell
-      requestBody:
-        description: Unpublish one of your published spells
-        content:
-          application/json:
-            schema:
-              $ref: "#/components/schemas/GetSpellRequest"
-        required: true
+      security:
+        - api_key: []
+      parameters:
+        - name: spell_id
+          in: path
+          description: ID of the spell to unpublish
+          required: true
+          schema:
+            type: string
       responses:
         "200":
           description: Spell unpublished successfully
@@ -363,7 +366,7 @@ paths:
         "404":
           $ref: "#/components/schemas/404Response"
         "422":
-          description: Spell not published or missing name field
+          description: Spell not published
           content:
             text/plain; charset=utf-8:
               schema:
