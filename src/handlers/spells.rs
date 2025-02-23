@@ -248,7 +248,14 @@ pub async fn query_spells(
 ) -> Result<impl IntoResponse, StatusCode> {
     let conn = &mut establish_connection();
 
-    match repositories::spells::query_spells(conn, &request) {}
+    match repositories::spells::query_spells(conn, user_id, request) {
+        Ok(spells) => Ok(Json(spells.into_collection()).into_response()),
+        Err(e) => {
+            let msg = format!("error querying spells: {}", e);
+            eprintln!("{}", msg);
+            Ok((StatusCode::INTERNAL_SERVER_ERROR, msg).into_response())
+        }
+    }
 }
 
 pub async fn query_public_spells(
