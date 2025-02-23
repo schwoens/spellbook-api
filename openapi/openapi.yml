@@ -132,8 +132,8 @@ paths:
                     example: false
         "400":
           $ref: "#/components/schemas/400Response"
-        "403":
-          $ref: "#/components/schemas/403Response"
+        "401":
+          $ref: "#/components/schemas/UnauthorizedResponse"
         "422":
           description: Duplicate spell or missing/invalid fields
           content:
@@ -158,8 +158,35 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/GetSpellsResponse"
-        "403":
-          $ref: "#/components/schemas/403Response"
+        "401":
+          $ref: "#/components/schemas/UnauthorizedResponse"
+        "500":
+          description: Database error
+  /spells/query:
+    post:
+      tags:
+        - Spells
+      summary: Search for spells in your spellbook
+      description: Search for spells in your spellbook
+      operationId: querySpells
+      security:
+        - api_key: []
+      requestBody:
+        description: Query data. All fields are optional.
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/QuerySpellsRequest"
+        required: true
+      responses:
+        "200":
+          description: Spells successfully queried.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/GetSpellsResponse"
+        "401":
+          $ref: "#/components/schemas/UnauthorizedResponse"
         "500":
           description: Database error
   /spell/{spell_id}:
@@ -194,22 +221,8 @@ paths:
                 $ref: "#/components/schemas/SpellResponse"
         "400":
           $ref: "#/components/schemas/400Response"
-        "403":
-          $ref: "#/components/schemas/403Response"
-        "404":
-          description: Spell not found
-          content:
-            text/plain; charset=utf-8:
-              schema:
-                type: string
-                example: You don't have a spell with the name "Invisibility" in your spellbook.
-        "422":
-          description: Duplicate spell or missing/invalid fields
-          content:
-            text/plain; charset=utf-8:
-              schema:
-                type: string
-                example: 'You already have a spell with the name "Fireball" in your spellbook.'
+        "401":
+          $ref: "#/components/schemas/UnauthorizedResponse"
         "500":
           description: Database error
     get:
@@ -236,8 +249,8 @@ paths:
                 $ref: "#/components/schemas/SpellResponse"
         "400":
           $ref: "#/components/schemas/400Response"
-        "403":
-          $ref: "#/components/schemas/403Response"
+        "401":
+          $ref: "#/components/schemas/UnauthorizedResponse"
         "404":
           description: Spell not found
           content:
@@ -279,8 +292,8 @@ paths:
                 example: The spell "Invisibility" was successfully erased from your spellbook.
         "400":
           $ref: "#/components/schemas/400Response"
-        "403":
-          $ref: "#/components/schemas/403Response"
+        "401":
+          $ref: "#/components/schemas/UnauthorizedResponse"
         "404":
           description: Spell not found
           content:
@@ -297,20 +310,21 @@ paths:
                 example: "Failed to deserialize the JSON body into the target type: missing field `name` at line 2 column 1"
         "500":
           description: Database error
-  /spell/publish:
-    post:
+  /spell/publish/{spell_id}:
+    patch:
       tags:
         - Spell
       summary: Publish a spell from your spellbook
       description: Publish a spell from your spellbook
-      operationId: publishSpell
-      requestBody:
-        description: Publish a spell from your spellbook
-        content:
-          application/json:
-            schema:
-              $ref: "#/components/schemas/GetSpellRequest"
-        required: true
+      security:
+        - api_key: []
+      parameters:
+        - name: spell_id
+          in: path
+          description: ID of the spell to publish
+          required: true
+          schema:
+            type: string
       responses:
         "200":
           description: Spell published successfully
@@ -321,12 +335,12 @@ paths:
                 example: Your spell "Fly" was successfully published.
         "400":
           $ref: "#/components/schemas/400Response"
-        "403":
-          $ref: "#/components/schemas/403Response"
+        "401":
+          $ref: "#/components/schemas/UnauthorizedResponse"
         "404":
           $ref: "#/components/schemas/404Response"
         "422":
-          description: Spell already published or missing name field
+          description: Spell already published
           content:
             text/plain; charset=utf-8:
               schema:
@@ -334,20 +348,22 @@ paths:
                 example: 'Your spell "Fly" is already published.'
         "500":
           description: Database error
-  /spell/unpublish:
-    post:
+  /spell/unpublish/{spell_id}:
+    patch:
       tags:
         - Spell
       summary: Unpublish one of your published spells
       description: Unpublish one of your published spells
       operationId: unpublishSpell
-      requestBody:
-        description: Unpublish one of your published spells
-        content:
-          application/json:
-            schema:
-              $ref: "#/components/schemas/GetSpellRequest"
-        required: true
+      security:
+        - api_key: []
+      parameters:
+        - name: spell_id
+          in: path
+          description: ID of the spell to unpublish
+          required: true
+          schema:
+            type: string
       responses:
         "200":
           description: Spell unpublished successfully
@@ -358,12 +374,12 @@ paths:
                 example: Your spell "Fly" was successfully unpublished.
         "400":
           $ref: "#/components/schemas/400Response"
-        "403":
-          $ref: "#/components/schemas/403Response"
+        "401":
+          $ref: "#/components/schemas/UnauthorizedResponse"
         "404":
           $ref: "#/components/schemas/404Response"
         "422":
-          description: Spell not published or missing name field
+          description: Spell not published
           content:
             text/plain; charset=utf-8:
               schema:
@@ -377,6 +393,29 @@ components:
       type: array
       items:
         $ref: "#/components/schemas/SpellResponse"
+    QuerySpellsRequest:
+      type: object
+      properties:
+        name:
+          type: string
+          example: Invis
+        level:
+          type: string
+          example: 2
+        casting_time:
+          type: string
+          example: ction
+        magic_school:
+          type: string
+          example: Ill
+        concentration:
+          type: bool
+          example: true
+        range:
+          type: string
+          example: Touch
+        duration:
+          type: hour
     GetSpellRequest:
       type: object
       properties:
@@ -444,13 +483,13 @@ components:
           schema:
             type: string
             example: "Failed to parse the request body as JSON: EOF while parsing a value at line 1 column 0"
-    403Response:
-      description: Authentification failed
+    UnauthorizedResponse:
+      description: Missing or invalid api key
       content:
         text/plain; charset=utf-8:
           schema:
             type: string
-            example: Authentification failed
+            example: Missing AUTHORIZATION header
     404Response:
       description: Spell not found
       content:

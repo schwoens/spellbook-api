@@ -6,7 +6,7 @@ use crate::{
     models::spells::{NewSpell, UpdatedSpell},
     repositories,
     requests::spells::{
-        CreateSpellRequest, GetPublicSpellRequest, PublishSpellRequest, UpdateSpellRequest,
+        CreateSpellRequest, GetPublicSpellRequest, QuerySpellRequest, UpdateSpellRequest,
     },
     IntoCollection, IntoResource, Validate,
 };
@@ -159,77 +159,101 @@ pub async fn delete_spell(
 
 pub async fn publish_spell(
     Extension(user_id): Extension<i32>,
-    Json(request): Json<PublishSpellRequest>,
+    Path(nanoid): Path<String>,
 ) -> Result<impl IntoResponse, StatusCode> {
     let conn = &mut establish_connection();
 
-    if repositories::spells::is_published(conn, user_id, &request.name).is_ok_and(|x| x) {
-        return Ok((
-            StatusCode::UNPROCESSABLE_ENTITY,
-            format!("Your spell \"{}\" is already published.", &request.name),
-        )
-            .into_response());
-    }
-
-    match repositories::spells::publish_spell(conn, user_id, &request.name, true) {
-        Ok(spell) => Ok((
-            StatusCode::OK,
-            format!("Your spell \"{}\" was successfully published.", spell.name),
-        )
-            .into_response()),
+    match repositories::spells::get_spell_by_nanoid(conn, user_id, &nanoid) {
+        Ok(spell) => {
+            if spell.published {
+                return Ok((
+                    StatusCode::UNPROCESSABLE_ENTITY,
+                    format!("Your spell \"{}\" is already published.", &spell.name),
+                ));
+            }
+            match repositories::spells::publish_spell(conn, user_id, &nanoid, true) {
+                Ok(_) => Ok((
+                    StatusCode::OK,
+                    format!("Your spell \"{}\" was successfully published.", &spell.name),
+                )),
+                Err(e) => {
+                    let msg = format!("error publishing spell: {}", e);
+                    eprintln!("{}", msg);
+                    Ok((StatusCode::INTERNAL_SERVER_ERROR, msg))
+                }
+            }
+        }
         Err(diesel::result::Error::NotFound) => Ok((
             StatusCode::NOT_FOUND,
             format!(
-                "You don't have a spell with the name \"{}\" in your spellbook.",
-                &request.name
+                "A spell with the id \"{}\" does not exist in your spellbook.",
+                nanoid
             ),
-        )
-            .into_response()),
+        )),
         Err(e) => {
-            eprintln!("error publishing spell: {}", e);
-            Ok((StatusCode::INTERNAL_SERVER_ERROR, "error publishing spell").into_response())
+            let msg = format!("error fetching spell: {}", e);
+            eprintln!("{}", msg);
+            Ok((StatusCode::INTERNAL_SERVER_ERROR, msg))
         }
     }
 }
 
 pub async fn unpublish_spell(
     Extension(user_id): Extension<i32>,
-    Json(request): Json<PublishSpellRequest>,
+    Path(nanoid): Path<String>,
 ) -> Result<impl IntoResponse, StatusCode> {
     let conn = &mut establish_connection();
 
-    if !repositories::spells::is_published(conn, user_id, &request.name).is_ok_and(|x| x) {
-        return Ok((
-            StatusCode::BAD_REQUEST,
-            format!("Your spell \"{}\" is not published.", &request.name),
-        )
-            .into_response());
-    }
-
-    match repositories::spells::publish_spell(conn, user_id, &request.name, false) {
-        Ok(spell) => Ok((
-            StatusCode::OK,
-            format!(
-                "Your spell \"{}\" was successfully unpublished.",
-                spell.name
-            ),
-        )
-            .into_response()),
+    match repositories::spells::get_spell_by_nanoid(conn, user_id, &nanoid) {
+        Ok(spell) => {
+            if !spell.published {
+                return Ok((
+                    StatusCode::UNPROCESSABLE_ENTITY,
+                    format!("Your spell \"{}\" is not public.", &spell.name),
+                ));
+            }
+            match repositories::spells::publish_spell(conn, user_id, &nanoid, false) {
+                Ok(_) => Ok((
+                    StatusCode::OK,
+                    format!(
+                        "Your spell \"{}\" was successfully unpublished.",
+                        &spell.name
+                    ),
+                )),
+                Err(e) => {
+                    let msg = format!("error unpublishing spell: {}", e);
+                    eprintln!("{}", msg);
+                    Ok((StatusCode::INTERNAL_SERVER_ERROR, msg))
+                }
+            }
+        }
         Err(diesel::result::Error::NotFound) => Ok((
             StatusCode::NOT_FOUND,
             format!(
-                "You don't have a spell with the name \"{}\" in your spellbook.",
-                &request.name
+                "A spell with the id \"{}\" does not exist in your spellbook.",
+                nanoid
             ),
-        )
-            .into_response()),
+        )),
         Err(e) => {
-            eprintln!("error unpublishing spell: {}", e);
-            Ok((
-                StatusCode::INTERNAL_SERVER_ERROR,
-                "error unpublishing spell",
-            )
-                .into_response())
+            let msg = format!("error fetching spell: {}", e);
+            eprintln!("{}", msg);
+            Ok((StatusCode::INTERNAL_SERVER_ERROR, msg))
+        }
+    }
+}
+
+pub async fn query_spells(
+    Extension(user_id): Extension<i32>,
+    Json(request): Json<QuerySpellRequest>,
+) -> Result<impl IntoResponse, StatusCode> {
+    let conn = &mut establish_connection();
+
+    match repositories::spells::query_spells(conn, user_id, request) {
+        Ok(spells) => Ok(Json(spells.into_collection()).into_response()),
+        Err(e) => {
+            let msg = format!("error querying spells: {}", e);
+            eprintln!("{}", msg);
+            Ok((StatusCode::INTERNAL_SERVER_ERROR, msg).into_response())
         }
     }
 }
