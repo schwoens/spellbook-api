@@ -32,7 +32,7 @@ pub struct GetPublicSpellRequest {
 }
 
 #[derive(Deserialize)]
-pub struct QuerySpellRequest {
+pub struct QuerySpellsRequest {
     pub name: Option<String>,
     pub level: Option<String>,
     pub casting_time: Option<String>,
@@ -40,4 +40,16 @@ pub struct QuerySpellRequest {
     pub concentration: Option<bool>,
     pub range: Option<String>,
     pub duration: Option<String>,
+}
+
+#[derive(Deserialize)]
+pub struct QueryPublicSpellsRequest {
+    pub name: Option<String>,
+    pub level: Option<String>,
+    pub casting_time: Option<String>,
+    pub magic_school: Option<String>,
+    pub concentration: Option<bool>,
+    pub range: Option<String>,
+    pub duration: Option<String>,
+    pub username: Option<String>,
 }

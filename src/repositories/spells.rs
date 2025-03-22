@@ -8,13 +8,13 @@ use crate::{
         spells::{NewSpell, Spell, UpdatedSpell},
         users::User,
     },
-    requests::spells::QuerySpellRequest,
+    requests::spells::{QueryPublicSpellsRequest, QuerySpellsRequest},
     schema::{
         spells::{
             self, casting_time, concentration, duration, level, magic_school, name, nanoid,
             published, range, user_id,
         },
-        users,
+        users::{self, username},
     },
 };
 
@@ -101,7 +101,7 @@ pub fn publish_spell(
 pub fn query_spells(
     conn: &mut PgConnection,
     u_id: i32,
-    query_data: QuerySpellRequest,
+    query_data: QuerySpellsRequest,
 ) -> Result<Vec<Spell>, diesel::result::Error> {
     let mut query = spells::table.into_boxed();
     query = query.filter(user_id.eq(u_id));
@@ -131,14 +131,48 @@ pub fn query_spells(
 
 pub fn query_public_spells(
     conn: &mut PgConnection,
-    keyword: &str,
+    u_id: i32,
+    query_data: QueryPublicSpellsRequest,
 ) -> Result<Vec<(Spell, User)>, diesel::result::Error> {
+    let mut query = spells::table.inner_join(users::table).into_boxed();
+    query = query.filter(published);
+    query = query.filter(user_id.ne(u_id));
+    if let Some(query_name) = query_data.name {
+        query = query.filter(name.ilike(format!("%{}%", query_name)))
+    }
+    if let Some(query_level) = query_data.level {
+        query = query.filter(level.ilike(format!("%{}%", query_level)))
+    }
+    if let Some(query_casting_time) = query_data.casting_time {
+        query = query.filter(casting_time.ilike(format!("%{}%", query_casting_time)))
+    }
+    if let Some(query_magic_school) = query_data.magic_school {
+        query = query.filter(magic_school.ilike(format!("%{}%", query_magic_school)))
+    }
+    if let Some(query_concentration) = query_data.concentration {
+        query = query.filter(concentration.eq(query_concentration))
+    }
+    if let Some(query_range) = query_data.range {
+        query = query.filter(range.ilike(format!("%{}%", query_range)))
+    }
+    if let Some(query_duration) = query_data.duration {
+        query = query.filter(duration.ilike(format!("%{}%", query_duration)))
+    }
+    if let Some(query_username) = query_data.username {
+        query = query.filter(username.eq(query_username))
+    }
+    query.load(conn)
+}
+
+pub fn get_public_spell(
+    conn: &mut PgConnection,
+    n_id: &str,
+) -> Result<Spell, diesel::result::Error> {
     spells::table
-        .inner_join(users::table)
-        .filter(name.ilike(format!("%{}%", keyword)))
-        .filter(published.eq(true))
-        .select((Spell::as_select(), User::as_select()))
-        .load::<(Spell, User)>(conn)
+        .select(Spell::as_select())
+        .filter(published)
+        .filter(nanoid.eq(n_id))
+        .first(conn)
 }
 
 pub fn is_published(
