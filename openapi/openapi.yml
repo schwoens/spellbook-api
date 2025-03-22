@@ -3,7 +3,7 @@ info:
   title: Spellbook API - OpenAPI 3.0
   version: 0.1.0
   description: |-
-    This is a description
+    A web-api for managing your spells. Show them off to your colleagues and take inspiration from spells other wizards published.
 
 servers:
   - url: http://localhost:3000
@@ -13,9 +13,9 @@ tags:
   - name: Spells
     description: Add spells to your spellbook and read them
   - name: Spell
-    description: Read, update or erase spells from your spellbook or publish them
+    description: Read, update, erase or publish spells from your spellbook
   - name: Public
-    description: Look for spells other users posted and copy them to your spellbook
+    description: Look for spells other wizards posted and copy them to your spellbook
 paths:
   /users:
     post:
@@ -25,7 +25,7 @@ paths:
       description: Create a user
       operationId: createUser
       requestBody:
-        description: Create a user
+        description: User object containing user account data
         content:
           application/json:
             schema:
@@ -37,14 +37,14 @@ paths:
         required: true
       responses:
         "200":
-          description: User successfully created
+          description: User created successfully
           content:
             text/plain; charset=utf-8:
               schema:
                 type: string
                 example: "Welcome Elminster! Your api key is: xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx Don't lose it!"
         "400":
-          $ref: "#/components/schemas/400Response"
+          $ref: "#/components/schemas/InvalidJsonResponse"
         "422":
           description: Username already taken or no username given
           content:
@@ -54,6 +54,11 @@ paths:
                 example: 'The username "<username>" is already taken'
         "500":
           description: Database error
+          content:
+            text/plain; charset=utf-8:
+              schema:
+                type: string
+                example: "Failed to insert user"
   /spells:
     post:
       tags:
@@ -64,7 +69,7 @@ paths:
       security:
         - api_key: []
       requestBody:
-        description: Add a new spell to your spellbook
+        description: Spell object, all fields are required
         content:
           application/json:
             schema:
@@ -72,14 +77,14 @@ paths:
               properties:
                 name:
                   type: string
-                  example: Fireball
+                  example: "Fireball"
                 level:
                   type: string
-                  example: Level 3
+                  example: "Level 3"
                   pattern: "^Level [1-9]$|^Cantrip$"
                 casting_time:
                   type: string
-                  example: Action
+                  example: "Action"
                 magic_school:
                   $ref: "#/components/schemas/MagicSchool"
                 concentration:
@@ -87,10 +92,10 @@ paths:
                   example: false
                 range:
                   type: string
-                  example: 150 feet
+                  example: "150 feet"
                 duration:
                   type: string
-                  example: Instantaneous
+                  example: "Instantaneous"
                 description:
                   type: string
                   example:
@@ -100,22 +105,25 @@ paths:
         required: true
       responses:
         "200":
-          description: Spell successfully added
+          description: Spell added successfully
           content:
             application/json:
               schema:
                 type: object
                 properties:
+                  id:
+                    type: string
+                    example: "Vg7H8rxHEPdqOIXhO1uJr"
                   name:
                     type: string
-                    example: Fireball
+                    example: "Fireball"
                   level:
                     type: string
                     pattern: "^Level [1-9]$|^Cantrip$"
-                    example: Level 3
+                    example: "Level 3"
                   casting_time:
                     type: string
-                    example: Action
+                    example: "Action"
                   magic_school:
                     $ref: "#/components/schemas/MagicSchool"
                   concentration:
@@ -123,19 +131,22 @@ paths:
                     example: false
                   range:
                     type: string
-                    example: 150 feet
+                    example: "150 feet"
                   duration:
                     type: string
-                    example: Instantaneous
+                    example: "Instantaneous"
+                  description:
+                    type: string
+                    example: "A bright streak flashes from you to a point you choose within range and then blossoms with a low roar into a fiery explosion. Each creature in a 20-foot-radius Sphere centered on that point makes a Dexterity saving throw, taking 8d6 Fire damage on a failed save or half as much damage on a successful one. Flammable objects in the area that aren't being worn or carried start burning. Using a Higher-Level Spell Slot. The damage increases by 1d6 for each spell slot level above 3."
                   published:
                     type: bool
                     example: false
         "400":
-          $ref: "#/components/schemas/400Response"
+          $ref: "#/components/schemas/InvalidJsonResponse"
         "401":
           $ref: "#/components/schemas/UnauthorizedResponse"
         "422":
-          description: Duplicate spell or missing/invalid fields
+          description: Duplicate spell name or missing/invalid fields
           content:
             text/plain; charset=utf-8:
               schema:
@@ -143,11 +154,15 @@ paths:
                 example: 'You already have a spell with the name "Fireball" in your spellbook.'
         "500":
           description: Database error
+          content:
+            text/plain; charset=utf-8:
+              type: string
+              example: "Failed to insert spell"
     get:
       tags:
         - Spells
-      summary: Get all the spells from your spellbook
-      description: Get all the spells from your spellbook
+      summary: Get a list of all your spells in your spellbook
+      description: Get a list of all your spells in your spellbook
       operationId: getSpells
       security:
         - api_key: []
@@ -157,11 +172,49 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/GetSpellsResponse"
+                type: array
+                items:
+                  type: object
+                  properties:
+                    id:
+                      type: string
+                      example: "Vg7H8rxHEPdqOIXhO1uJr"
+                    name:
+                      type: string
+                      example: "Fireball"
+                    level:
+                      type: string
+                      pattern: "^Level [1-9]$|^Cantrip$"
+                      example: "Level 3"
+                    casting_time:
+                      type: string
+                      example: "Action"
+                    magic_school:
+                      $ref: "#/components/schemas/MagicSchool"
+                    concentration:
+                      type: bool
+                      example: false
+                    range:
+                      type: string
+                      example: "150 feet"
+                    duration:
+                      type: string
+                      example: "Instantaneous"
+                    description:
+                      type: string
+                      example: "A bright streak flashes from you to a point you choose within range and then blossoms with a low roar into a fiery explosion. Each creature in a 20-foot-radius Sphere centered on that point makes a Dexterity saving throw, taking 8d6 Fire damage on a failed save or half as much damage on a successful one. Flammable objects in the area that aren't being worn or carried start burning. Using a Higher-Level Spell Slot. The damage increases by 1d6 for each spell slot level above 3."
+                    published:
+                      type: bool
+                      example: false
         "401":
           $ref: "#/components/schemas/UnauthorizedResponse"
         "500":
           description: Database error
+          content:
+            text/plain; charset=utf-8:
+              type: string
+              example: "Failed to retrieve spells"
+
   /spells/query:
     post:
       tags:
@@ -172,23 +225,84 @@ paths:
       security:
         - api_key: []
       requestBody:
-        description: Query data. All fields are optional.
+        description: Query data, all fields are optional
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/QuerySpellsRequest"
+              type: object
+              properties:
+                name:
+                  type: string
+                  example: "Invis"
+                level:
+                  type: string
+                  example: "2"
+                casting_time:
+                  type: string
+                  example: "ction"
+                magic_school:
+                  type: string
+                  example: "Ill"
+                concentration:
+                  type: bool
+                  example: true
+                range:
+                  type: string
+                  example: "Tou"
+                duration:
+                  type: string
+                  example: "hour"
         required: true
       responses:
         "200":
-          description: Spells successfully queried.
+          description: Spells queried successfully
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/GetSpellsResponse"
+                type: array
+                items:
+                  type: object
+                  properties:
+                    id:
+                      type: string
+                      example: "Vg7H8rxHEPdqOIXhO1uJr"
+                    name:
+                      type: string
+                      example: "Invisibility"
+                    level:
+                      type: string
+                      pattern: "^Level [1-9]$^Cantrip$"
+                      example: "Level 2"
+                    casting_time:
+                      type: string
+                      example: "1 Action"
+                    magic_school:
+                      $ref: "#/components/schemas/MagicSchool"
+                    concentration:
+                      type: bool
+                      example: false
+                    range:
+                      type: string
+                      example: "Touch"
+                    duration:
+                      type: string
+                      example: "1 hour"
+                    description:
+                      type: string
+                      example: "A creature you touch has the Invisible condition until the spell ends. The spell ends early immediately after the target makes an attack roll, deals damage, or casts a spell."
+                    published:
+                      type: bool
+                      example: false
+        "400":
+          $ref: "#/components/schemas/InvalidJsonResponse"
         "401":
           $ref: "#/components/schemas/UnauthorizedResponse"
         "500":
           description: Database error
+          content:
+            text/plain; charset=utf-8:
+              type: string
+              example: "Failed to query spells"
   /spell/{spell_id}:
     put:
       tags:
@@ -206,25 +320,98 @@ paths:
           schema:
             type: string
       requestBody:
-        description: Updated spell data. All fields are optional.
+        description: Updated spell object, all fields are optional
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/UpdateSpellRequest"
-        required: true
+              type: object
+              properties:
+                name:
+                  type: string
+                  example: "Mage Hand"
+                level:
+                  type: string
+                  example: "Cantrip"
+                  pattern: "^Level [1-9]$|^Cantrip$"
+                casting_time:
+                  type: string
+                  example: "Action"
+                magic_school:
+                  $ref: "#/components/schemas/MagicSchool"
+                concentration:
+                  type: bool
+                  example: false
+                range:
+                  type: string
+                  example: "30 feet"
+                duration:
+                  type: string
+                  example: "1 minute"
+                description:
+                  type: string
+                  example: "A spectral, floating hand appears at a point you choose within range. The hand lasts for the duration. The hand vanishes if it is ever more than 30 feet away from you or if you cast this spell again."
+              required: true
       responses:
         "200":
-          description: Spell successfully updated
+          description: Spell updated successfully
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/SpellResponse"
+                type: object
+                properties:
+                  id:
+                    type: string
+                    example: "Vg7H8rxHEPdqOIXhO1uJr"
+                  name:
+                    type: string
+                    example: "Mage Hand"
+                  level:
+                    type: string
+                    pattern: "^Level [1-9]$|^Cantrip$"
+                    example: "Cantrip"
+                  casting_time:
+                    type: string
+                    example: "Action"
+                  magic_school:
+                    $ref: "#/components/schemas/MagicSchool"
+                  concentration:
+                    type: bool
+                    example: false
+                  range:
+                    type: string
+                    example: "30 feet"
+                  duration:
+                    type: string
+                    example: "1 minute"
+                  description:
+                    type: string
+                    example: "A spectral, floating hand appears at a point you choose within range. The hand lasts for the duration. The hand vanishes if it is ever more than 30 feet away from you or if you cast this spell again."
+                  published:
+                    type: bool
+                    example: true
         "400":
-          $ref: "#/components/schemas/400Response"
+          $ref: "#/components/schemas/InvalidJsonResponse"
         "401":
           $ref: "#/components/schemas/UnauthorizedResponse"
+        "404":
+          description: Spell not found
+          content:
+            text/plain; charset=utf-8:
+              type: string
+              example: You don't have a spell with the id "<ID>" in your spellbook
+        "422":
+          description: Duplicate spell name or invalid fields
+          content:
+            text/plain; charset=utf-8:
+              schema:
+                type: string
+                example: 'Invalid spell level "1" expected "Cantrip" or "Level [1-9]"'
         "500":
           description: Database error
+          content:
+            text/plain; charset=utf-8:
+              type: string
+              example: "Failed to update spell"
     get:
       tags:
         - Spell
@@ -246,9 +433,38 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/SpellResponse"
-        "400":
-          $ref: "#/components/schemas/400Response"
+                type: object
+                properties:
+                  id:
+                    type: string
+                    example: "Vg7H8rxHEPdqOIXhO1uJr"
+                  name:
+                    type: string
+                    example: "Mage Hand"
+                  level:
+                    type: string
+                    pattern: "^Level [1-9]$|^Cantrip$"
+                    example: "Cantrip"
+                  casting_time:
+                    type: string
+                    example: "Action"
+                  magic_school:
+                    $ref: "#/components/schemas/MagicSchool"
+                  concentration:
+                    type: bool
+                    example: false
+                  range:
+                    type: string
+                    example: "30 feet"
+                  duration:
+                    type: string
+                    example: "1 minute"
+                  description:
+                    type: string
+                    example: "A spectral, floating hand appears at a point you choose within range. The hand lasts for the duration. The hand vanishes if it is ever more than 30 feet away from you or if you cast this spell again."
+                  published:
+                    type: bool
+                    example: true
         "401":
           $ref: "#/components/schemas/UnauthorizedResponse"
         "404":
@@ -257,16 +473,14 @@ paths:
             text/plain; charset=utf-8:
               schema:
                 type: string
-                example: You don't have a spell with the name "Invisibility" in your spellbook.
-        "422":
-          description: Missing name field
+                example: You don't have a spell with the id "<ID>" in your spellbook
+        "500":
+          description: Database error
           content:
             text/plain; charset=utf-8:
               schema:
                 type: string
-                example: "Failed to deserialize the JSON body into the target type: missing field `name` at line 2 column 1"
-        "500":
-          description: Database error
+                example: "Failed to retrieve spell"
     delete:
       tags:
         - Spell
@@ -278,7 +492,7 @@ paths:
       parameters:
         - name: spell_id
           in: path
-          description: ID of the spell to erase from your spellbook.
+          description: ID of the spell to erase from your spellbook
           required: true
           schema:
             type: string
@@ -289,9 +503,7 @@ paths:
             text/plain; charset=utf-8:
               schema:
                 type: string
-                example: The spell "Invisibility" was successfully erased from your spellbook.
-        "400":
-          $ref: "#/components/schemas/400Response"
+                example: The spell was successfully erased from your spellbook
         "401":
           $ref: "#/components/schemas/UnauthorizedResponse"
         "404":
@@ -300,16 +512,14 @@ paths:
             text/plain; charset=utf-8:
               schema:
                 type: string
-                example: You don't have a spell with the name "Invisibility" in your spellbook.
-        "422":
-          description: Missing name field
+                example: You don't have a spell with the id "<ID>" in your spellbook
+        "500":
+          description: Database error
           content:
             text/plain; charset=utf-8:
               schema:
                 type: string
-                example: "Failed to deserialize the JSON body into the target type: missing field `name` at line 2 column 1"
-        "500":
-          description: Database error
+                example: "Failed to erase spell"
   /spell/publish/{spell_id}:
     patch:
       tags:
@@ -332,22 +542,30 @@ paths:
             text/plain; charset=utf-8:
               schema:
                 type: string
-                example: Your spell "Fly" was successfully published.
-        "400":
-          $ref: "#/components/schemas/400Response"
+                example: Your spell "Fly" was successfully published
         "401":
           $ref: "#/components/schemas/UnauthorizedResponse"
         "404":
-          $ref: "#/components/schemas/404Response"
+          description: Spell not found
+          content:
+            text/plain; charset=utf-8:
+              schema:
+                type: string
+                example: You don't have a spell with the id "<ID>" in your spellbook
         "422":
           description: Spell already published
           content:
             text/plain; charset=utf-8:
               schema:
                 type: string
-                example: 'Your spell "Fly" is already published.'
+                example: 'Your spell "Fly" is already published'
         "500":
           description: Database error
+          content:
+            text/plain; charset=utf-8:
+              schema:
+                type: string
+                example: "Failed to publish spell"
   /spell/unpublish/{spell_id}:
     patch:
       tags:
@@ -371,22 +589,30 @@ paths:
             text/plain; charset=utf-8:
               schema:
                 type: string
-                example: Your spell "Fly" was successfully unpublished.
-        "400":
-          $ref: "#/components/schemas/400Response"
+                example: Your spell "Fly" was successfully unpublished
         "401":
           $ref: "#/components/schemas/UnauthorizedResponse"
         "404":
-          $ref: "#/components/schemas/404Response"
+          description: Spell not found
+          content:
+            text/plain; charset=utf-8:
+              schema:
+                type: string
+                example: You don't have a spell with the id "<ID>" in your spellbook
         "422":
           description: Spell not published
           content:
             text/plain; charset=utf-8:
               schema:
                 type: string
-                example: 'Your spell "Fly" is not published.'
+                example: 'Your spell "Fly" is not published'
         "500":
           description: Database error
+          content:
+            text/plain; charset=utf-8:
+              schema:
+                type: string
+                example: "Failed to unpublish spell"
   /public/spells/query:
     post:
       tags:
@@ -397,29 +623,90 @@ paths:
       security:
         - api_key: []
       requestBody:
-        description: Query data. All fields are optional.
+        description: Query data, all fields are optional
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/QueryPublicSpellsRequest"
-        required: true
+              type: object
+              properties:
+                name:
+                  type: string
+                  example: "Hero"
+                level:
+                  type: string
+                  example: "1"
+                casting_time:
+                  type: string
+                  example: "ction"
+                magic_school:
+                  type: string
+                  example: "Enchant"
+                concentration:
+                  type: bool
+                  example: true
+                range:
+                  type: string
+                  example: "Touch"
+                duration:
+                  type: string
+                  example: "hour"
+                username:
+                  type: string
+                  example: "Xan"
+              required: true
       responses:
         "200":
-          description: Spells successfully queried.
+          description: Spells successfully queried
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/GetPublicSpellsResponse"
+                type: object
+                properties:
+                  id:
+                    type: string
+                    example: "Vg7H8rxHEPdqOIXhO1uJr"
+                  name:
+                    type: string
+                    example: "Heroism"
+                  level:
+                    type: string
+                    pattern: "^Level [1-9]$|^Cantrip$"
+                    example: "Level 1"
+                  casting_time:
+                    type: string
+                    example: "Action"
+                  magic_school:
+                    $ref: "#/components/schemas/MagicSchool"
+                  concentration:
+                    type: bool
+                    example: true
+                  range:
+                    type: string
+                    example: "Touch"
+                  duration:
+                    type: string
+                    example: "1 hour"
+                  description:
+                    type: string
+                    example: "A willing creature you touch is imbued with bravery. Until the spell ends, the creature is immune to the Frightened condition and gains Temporary Hit Points equal to your spellcasting ability modifier at the start of each of its turns."
+                  username:
+                    type: string
+                    example: "Xanathar"
         "401":
           $ref: "#/components/schemas/UnauthorizedResponse"
         "500":
           description: Database error
+          content:
+            text/plain; charset=utf-8:
+              schema:
+                type: string
+                example: "Failed to retrieve public spells"
   /public/spell/copy/{spell_id}:
     patch:
       tags:
         - Public
-      summary: Copy a published spell from some else's spellbook.
-      description: Copy a published spell from some else's spellbook.
+      summary: Copy a published spell from some else's spellbook
+      description: Copy a published spell from some else's spellbook
       operationId: copyPublicSpell
       security:
         - api_key: []
@@ -432,164 +719,68 @@ paths:
             type: string
       responses:
         "200":
-          description: Spell successfully copied.
+          description: Spell successfully copied
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/SpellResponse"
+                type: object
+                properties:
+                  id:
+                    type: string
+                    example: "Vg7H8rxHEPdqOIXhO1uJr"
+                  name:
+                    type: string
+                    example: "Heroism"
+                  level:
+                    type: string
+                    pattern: "^Level [1-9]$|^Cantrip$"
+                    example: "Level 1"
+                  casting_time:
+                    type: string
+                    example: "Action"
+                  magic_school:
+                    $ref: "#/components/schemas/MagicSchool"
+                  concentration:
+                    type: bool
+                    example: true
+                  range:
+                    type: string
+                    example: "Touch"
+                  duration:
+                    type: string
+                    example: "1 hour"
+                  description:
+                    type: string
+                    example: "A willing creature you touch is imbued with bravery. Until the spell ends, the creature is immune to the Frightened condition and gains Temporary Hit Points equal to your spellcasting ability modifier at the start of each of its turns."
+                  published:
+                    type: bool
+                    example: false
         "401":
           $ref: "#/components/schemas/UnauthorizedResponse"
         "404":
-          $ref: "#/components/schemas/NotFoundResponse"
+          description: Spell not found
+          content:
+            text/plain; charset=utf-8:
+              schema:
+                type: string
+                example: 'A public spell with the id "<ID>" does not exist'
+        "422":
+          description: Duplicate spell name
+          content:
+            text/plain; charset=utf-8:
+              schema:
+                type: string
+                example: 'You already have a spell with the name "Heroism" in your spellbook'
         "500":
           description: Database error
+          content:
+            text/plain; charset=utf-8:
+              schema:
+                type: string
+                example: "Failed to copy spell"
 components:
   schemas:
-    GetSpellsResponse:
-      type: array
-      items:
-        $ref: "#/components/schemas/SpellResponse"
-    GetPublicSpellsResponse:
-      type: array
-      items:
-        type: object
-        properties:
-          name:
-            type: string
-            example: "Heroism"
-          level:
-            type: string
-            example: "Level 1"
-            pattern: "^Level [1-9]$|^Cantrip$"
-          casting_time:
-            type: string
-            example: "Action"
-          magic_school:
-            $ref: "#/components/schemas/MagicSchool"
-          concentration:
-            type: bool
-            example: false
-          range:
-            type: string
-            example: "Touch"
-          duration:
-            type: string
-            example: "1 minute"
-          username:
-            type: string
-            example: "Xanathar"
-    QuerySpellsRequest:
-      type: object
-      properties:
-        name:
-          type: string
-          example: Invis
-        level:
-          type: string
-          example: "2"
-        casting_time:
-          type: string
-          example: ction
-        magic_school:
-          type: string
-          example: Ill
-        concentration:
-          type: bool
-          example: true
-        range:
-          type: string
-          example: Touch
-        duration:
-          type: string
-          example: "1 hour"
-    QueryPublicSpellsRequest:
-      type: object
-      properties:
-        name:
-          type: string
-          example: "Hero"
-        level:
-          type: string
-          example: "1"
-        casting_time:
-          type: string
-          example: "ction"
-        magic_school:
-          type: string
-          example: "Enchant"
-        concentration:
-          type: bool
-          example: true
-        range:
-          type: string
-          example: "Touch"
-        duration:
-          type: string
-          example: "hour"
-        username:
-          type: string
-          example: "Xan"
-    GetSpellRequest:
-      type: object
-      properties:
-        name:
-          type: string
-          example: Invisibility
-    UpdateSpellRequest:
-      type: object
-      properties:
-        name:
-          type: string
-          example: Mage Hand
-        level:
-          type: string
-          example: Cantrip
-          pattern: "^Level [1-9]$|^Cantrip$"
-        casting_time:
-          type: string
-          example: Action
-        magic_school:
-          $ref: "#/components/schemas/MagicSchool"
-        concentration:
-          type: bool
-          example: false
-        range:
-          type: string
-          example: 30 feet
-        duration:
-          type: string
-          example: 1 minute
-        description:
-          type: string
-          example: "A spectral, floating hand appears at a point you choose within range. The hand lasts for the duration. The hand vanishes if it is ever more than 30 feet away from you or if you cast this spell again."
-    SpellResponse:
-      type: object
-      properties:
-        name:
-          type: string
-          example: Fireball
-        level:
-          type: string
-          pattern: "^Level [1-9]$|^Cantrip$"
-          example: Level 3
-        casting_time:
-          type: string
-          example: Action
-        magic_school:
-          $ref: "#/components/schemas/MagicSchool"
-        concentration:
-          type: bool
-          example: false
-        range:
-          type: string
-          example: 150 feet
-        duration:
-          type: string
-          example: Instantaneous
-        published:
-          type: bool
-          example: false
-    400Response:
+    InvalidJsonResponse:
       description: Missing or invalid JSON body
       content:
         text/plain; charset=utf-8:
@@ -602,15 +793,7 @@ components:
         text/plain; charset=utf-8:
           schema:
             type: string
-            example: Missing AUTHORIZATION header
-    NotFoundResponse:
-      description: Spell not found
-      content:
-        text/plain; charset=utf-8:
-          schema:
-            type: string
-            example: A spell with the id "<ID>" does not exist in your spellbook.
-
+            example: "Missing AUTHORIZATION header"
     MagicSchool:
       type: string
       enum:

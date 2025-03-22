@@ -62,7 +62,7 @@ pub fn insert_spell(
 pub fn update_spell(
     conn: &mut PgConnection,
     u_id: i32,
-    n_id: String,
+    n_id: &str,
     updated_spell: UpdatedSpell,
 ) -> Result<Spell, diesel::result::Error> {
     diesel::update(spells::table)

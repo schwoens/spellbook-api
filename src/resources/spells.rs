@@ -46,6 +46,7 @@ impl IntoCollection<SpellResource> for Vec<Spell> {
 
 #[derive(Serialize)]
 pub struct PublicSpellResource {
+    pub id: String,
     pub name: String,
     pub level: String,
     pub casting_time: String,
@@ -60,6 +61,7 @@ pub struct PublicSpellResource {
 impl IntoResource<PublicSpellResource> for (Spell, User) {
     fn into_resource(self) -> PublicSpellResource {
         PublicSpellResource {
+            id: self.0.nanoid,
             name: self.0.name,
             level: self.0.level,
             casting_time: self.0.casting_time,

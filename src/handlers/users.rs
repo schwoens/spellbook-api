@@ -25,24 +25,17 @@ pub async fn post_user(
             user.username, key
         )
         .into_response()),
-        Err(e) => {
-            eprintln!("error inserting user: {}", e);
-            match e {
-                diesel::result::Error::DatabaseError(kind, _) => {
-                    match kind {
-                        DatabaseErrorKind::UniqueViolation => Ok((
-                            StatusCode::UNPROCESSABLE_ENTITY,
-                            format!("the username \"{}\" is already taken", &request.username),
-                        )
-                            .into_response()),
-                        _ => Ok((StatusCode::INTERNAL_SERVER_ERROR, "error inserting user")
-                            .into_response()),
-                    }
-                }
-                _ => {
-                    Ok((StatusCode::INTERNAL_SERVER_ERROR, "error inserting user").into_response())
-                }
+        Err(e) => match e {
+            diesel::result::Error::DatabaseError(DatabaseErrorKind::UniqueViolation, _) => Ok((
+                StatusCode::UNPROCESSABLE_ENTITY,
+                format!("The username \"{}\" is already taken", &request.username),
+            )
+                .into_response()),
+            _ => {
+                let msg = "Failed to insert user";
+                eprintln!("{}: {}", msg, e);
+                Ok((StatusCode::INTERNAL_SERVER_ERROR, msg).into_response())
             }
-        }
+        },
     }
 }
