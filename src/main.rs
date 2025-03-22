@@ -23,7 +23,7 @@ async fn main() {
         .route("/spell/publish/:nanoid", patch(publish_spell))
         .route("/spell/unpublish", patch(unpublish_spell))
         .route("/public/spells/query", post(query_public_spells))
-        .route("/public/spell/:nanoid", patch(copy_public_spell))
+        .route("/public/spell/copy/:nanoid", patch(copy_public_spell))
         .layer(middleware::from_fn(spellbook_api::middleware::auth))
         .route("/users", post(post_user));
 

@@ -391,7 +391,7 @@ paths:
     post:
       tags:
         - Public
-      summary: Search for spells others have published. 
+      summary: Search for spells others have published.
       description: Search for spells others have published. Will not show your own published spells.
       operationId: queryPublicSpells
       security:
@@ -418,7 +418,7 @@ paths:
     patch:
       tags:
         - Public
-      summary: Copy a published spell from some else's spellbook. 
+      summary: Copy a published spell from some else's spellbook.
       description: Copy a published spell from some else's spellbook.
       operationId: copyPublicSpell
       security:
@@ -436,7 +436,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/GetSpellResponse"
+                $ref: "#/components/schemas/SpellResponse"
         "401":
           $ref: "#/components/schemas/UnauthorizedResponse"
         "404":
@@ -603,13 +603,13 @@ components:
           schema:
             type: string
             example: Missing AUTHORIZATION header
-    404Response:
+    NotFoundResponse:
       description: Spell not found
       content:
         text/plain; charset=utf-8:
           schema:
             type: string
-            example: You don't have a spell with the name "Invisibility" in your spellbook.
+            example: A spell with the id "<ID>" does not exist in your spellbook.
 
     MagicSchool:
       type: string
