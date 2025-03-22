@@ -6,7 +6,7 @@ use crate::{
     models::spells::{NewSpell, UpdatedSpell},
     repositories,
     requests::spells::{
-        CreateSpellRequest, GetPublicSpellRequest, QuerySpellRequest, UpdateSpellRequest,
+        CreateSpellRequest, QueryPublicSpellsRequest, QuerySpellsRequest, UpdateSpellRequest,
     },
     IntoCollection, IntoResource, Validate,
 };
@@ -18,8 +18,9 @@ pub async fn get_spells(
     match repositories::spells::get_spells(conn, user_id) {
         Ok(spells) => Ok(Json(spells.into_collection()).into_response()),
         Err(e) => {
-            eprintln!("error retrieving spells: {}", e);
-            Ok((StatusCode::INTERNAL_SERVER_ERROR, "error retrieving spells").into_response())
+            let msg = "error retrieving spells";
+            eprintln!("{}: {}", msg, e);
+            Ok((StatusCode::INTERNAL_SERVER_ERROR, msg).into_response())
         }
     }
 }
@@ -244,7 +245,7 @@ pub async fn unpublish_spell(
 
 pub async fn query_spells(
     Extension(user_id): Extension<i32>,
-    Json(request): Json<QuerySpellRequest>,
+    Json(request): Json<QuerySpellsRequest>,
 ) -> Result<impl IntoResponse, StatusCode> {
     let conn = &mut establish_connection();
 
@@ -259,19 +260,76 @@ pub async fn query_spells(
 }
 
 pub async fn query_public_spells(
-    Json(request): Json<GetPublicSpellRequest>,
+    Extension(user_id): Extension<i32>,
+    Json(request): Json<QueryPublicSpellsRequest>,
 ) -> Result<impl IntoResponse, StatusCode> {
     let conn = &mut establish_connection();
 
-    match repositories::spells::query_public_spells(conn, &request.keyword) {
+    match repositories::spells::query_public_spells(conn, user_id, request) {
         Ok(spells_with_users) => Ok(Json(spells_with_users.into_collection()).into_response()),
         Err(e) => {
-            eprintln!("error querying public spells: {}", e);
-            Ok((
-                StatusCode::INTERNAL_SERVER_ERROR,
-                "error querying public spells",
+            let msg = format!("error querying public spells: {}", e);
+            eprintln!("{}", msg);
+            Ok((StatusCode::INTERNAL_SERVER_ERROR, msg).into_response())
+        }
+    }
+}
+
+pub async fn copy_public_spell(
+    Extension(user_id): Extension<i32>,
+    Path(nanoid): Path<String>,
+) -> Result<impl IntoResponse, StatusCode> {
+    let conn = &mut establish_connection();
+
+    let spell = repositories::spells::get_public_spell(conn, &nanoid);
+
+    match spell {
+        Err(e) => match e {
+            diesel::result::Error::NotFound => Ok((
+                StatusCode::NOT_FOUND,
+                format!("A public spell with the id \"{}\" does not exist", nanoid),
             )
-                .into_response())
+                .into_response()),
+            _ => {
+                let msg = format!("error fetching published spell: {}", e);
+                eprintln!("{}", msg);
+                Ok((StatusCode::INTERNAL_SERVER_ERROR, msg).into_response())
+            }
+        },
+        Ok(spell) => {
+            if let Ok(spell) = repositories::spells::get_spell_by_name(conn, user_id, &spell.name) {
+                Ok((
+                    StatusCode::UNPROCESSABLE_ENTITY,
+                    format!(
+                        "You already have a spell with the name \"{}\" in your spellbook.",
+                        spell.name
+                    ),
+                )
+                    .into_response())
+            } else {
+                let copy = NewSpell {
+                    name: &spell.name,
+                    level: &spell.level,
+                    casting_time: &spell.casting_time,
+                    magic_school: &spell.magic_school,
+                    concentration: spell.concentration,
+                    range: &spell.range,
+                    duration: &spell.duration,
+                    description: &spell.description,
+                    user_id,
+                    published: false,
+                    nanoid: &nanoid!(),
+                };
+
+                match repositories::spells::insert_spell(conn, copy) {
+                    Ok(spell) => Ok(Json(spell.into_resource()).into_response()),
+                    Err(e) => {
+                        let msg = format!("error inserting spell: {}", e);
+                        eprintln!("{}", msg);
+                        Ok((StatusCode::INTERNAL_SERVER_ERROR, msg).into_response())
+                    }
+                }
+            }
         }
     }
 }

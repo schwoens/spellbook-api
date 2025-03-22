@@ -387,12 +387,97 @@ paths:
                 example: 'Your spell "Fly" is not published.'
         "500":
           description: Database error
+  /public/spells/query:
+    post:
+      tags:
+        - Public
+      summary: Search for spells others have published.
+      description: Search for spells others have published. Will not show your own published spells.
+      operationId: queryPublicSpells
+      security:
+        - api_key: []
+      requestBody:
+        description: Query data. All fields are optional.
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/QueryPublicSpellsRequest"
+        required: true
+      responses:
+        "200":
+          description: Spells successfully queried.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/GetPublicSpellsResponse"
+        "401":
+          $ref: "#/components/schemas/UnauthorizedResponse"
+        "500":
+          description: Database error
+  /public/spell/copy/{spell_id}:
+    patch:
+      tags:
+        - Public
+      summary: Copy a published spell from some else's spellbook.
+      description: Copy a published spell from some else's spellbook.
+      operationId: copyPublicSpell
+      security:
+        - api_key: []
+      parameters:
+        - name: spell_id
+          in: path
+          description: ID of the spell to copy
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Spell successfully copied.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SpellResponse"
+        "401":
+          $ref: "#/components/schemas/UnauthorizedResponse"
+        "404":
+          $ref: "#/components/schemas/NotFoundResponse"
+        "500":
+          description: Database error
 components:
   schemas:
     GetSpellsResponse:
       type: array
       items:
         $ref: "#/components/schemas/SpellResponse"
+    GetPublicSpellsResponse:
+      type: array
+      items:
+        type: object
+        properties:
+          name:
+            type: string
+            example: "Heroism"
+          level:
+            type: string
+            example: "Level 1"
+            pattern: "^Level [1-9]$|^Cantrip$"
+          casting_time:
+            type: string
+            example: "Action"
+          magic_school:
+            $ref: "#/components/schemas/MagicSchool"
+          concentration:
+            type: bool
+            example: false
+          range:
+            type: string
+            example: "Touch"
+          duration:
+            type: string
+            example: "1 minute"
+          username:
+            type: string
+            example: "Xanathar"
     QuerySpellsRequest:
       type: object
       properties:
@@ -401,7 +486,7 @@ components:
           example: Invis
         level:
           type: string
-          example: 2
+          example: "2"
         casting_time:
           type: string
           example: ction
@@ -415,7 +500,35 @@ components:
           type: string
           example: Touch
         duration:
-          type: hour
+          type: string
+          example: "1 hour"
+    QueryPublicSpellsRequest:
+      type: object
+      properties:
+        name:
+          type: string
+          example: "Hero"
+        level:
+          type: string
+          example: "1"
+        casting_time:
+          type: string
+          example: "ction"
+        magic_school:
+          type: string
+          example: "Enchant"
+        concentration:
+          type: bool
+          example: true
+        range:
+          type: string
+          example: "Touch"
+        duration:
+          type: string
+          example: "hour"
+        username:
+          type: string
+          example: "Xan"
     GetSpellRequest:
       type: object
       properties:
@@ -490,13 +603,13 @@ components:
           schema:
             type: string
             example: Missing AUTHORIZATION header
-    404Response:
+    NotFoundResponse:
       description: Spell not found
       content:
         text/plain; charset=utf-8:
           schema:
             type: string
-            example: You don't have a spell with the name "Invisibility" in your spellbook.
+            example: A spell with the id "<ID>" does not exist in your spellbook.
 
     MagicSchool:
       type: string

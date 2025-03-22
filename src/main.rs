@@ -5,8 +5,8 @@ use axum::{
 };
 use spellbook_api::handlers::{
     spells::{
-        delete_spell, get_spell, get_spells, post_spell, publish_spell, query_public_spells,
-        query_spells, unpublish_spell, update_spell,
+        copy_public_spell, delete_spell, get_spell, get_spells, post_spell, publish_spell,
+        query_public_spells, query_spells, unpublish_spell, update_spell,
     },
     users::post_user,
 };
@@ -22,7 +22,8 @@ async fn main() {
         )
         .route("/spell/publish/:nanoid", patch(publish_spell))
         .route("/spell/unpublish", patch(unpublish_spell))
-        .route("/public/spell/query", post(query_public_spells))
+        .route("/public/spells/query", post(query_public_spells))
+        .route("/public/spell/copy/:nanoid", patch(copy_public_spell))
         .layer(middleware::from_fn(spellbook_api::middleware::auth))
         .route("/users", post(post_user));
 
