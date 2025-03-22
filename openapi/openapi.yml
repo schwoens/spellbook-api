@@ -501,7 +501,7 @@ components:
           example: Touch
         duration:
           type: string
-          example: hour
+          example: "1 hour"
     QueryPublicSpellsRequest:
       type: object
       properties:
