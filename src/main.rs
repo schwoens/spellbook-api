@@ -15,7 +15,7 @@ use tower_http::cors::{CorsLayer, Any};
 #[tokio::main]
 async fn main() {
 
-    let cors_layer = CorsLayer::new().allow_origin(Any);
+    let cors_layer = CorsLayer::new().allow_origin(Any).allow_headers(Any);
 
     let app = Router::new()
         .route("/spells", get(get_spells).post(post_spell))
