@@ -18,7 +18,7 @@ pub async fn get_spells(
     match repositories::spells::get_spells(conn, user_id) {
         Ok(spells) => Ok(Json(spells.into_collection()).into_response()),
         Err(e) => {
-            let msg = "error retrieving spells";
+            let msg = "Failed to retrieve spells";
             eprintln!("{}: {}", msg, e);
             Ok((StatusCode::INTERNAL_SERVER_ERROR, msg).into_response())
         }
@@ -36,12 +36,16 @@ pub async fn get_spell(
         Err(e) => match e {
             diesel::result::Error::NotFound => Ok((
                 StatusCode::NOT_FOUND,
-                "You don't have a spell with this id in your spellbook.",
+                format!(
+                    "You don't have a spell with the id \"{}\" in your spellbook",
+                    nanoid
+                ),
             )
                 .into_response()),
             _ => {
-                eprintln!("error retrieving spell: {}", e);
-                Ok((StatusCode::INTERNAL_SERVER_ERROR, "error retrieving spell").into_response())
+                let msg = "Failed to retrieve spell";
+                eprintln!("{}: {}", msg, e);
+                Ok((StatusCode::INTERNAL_SERVER_ERROR, msg).into_response())
             }
         },
     }
@@ -86,8 +90,9 @@ pub async fn post_spell(
     match repositories::spells::insert_spell(conn, new_spell) {
         Ok(spell) => Ok(Json(spell.into_resource()).into_response()),
         Err(e) => {
-            eprintln!("error inserting spell: {}", e);
-            Ok((StatusCode::INTERNAL_SERVER_ERROR, "error inserting spell").into_response())
+            let msg = "Failed to insert spell";
+            eprintln!("{}: {}", msg, e);
+            Ok((StatusCode::INTERNAL_SERVER_ERROR, msg).into_response())
         }
     }
 }
@@ -120,16 +125,20 @@ pub async fn update_spell(
 
     let updated_spell = UpdatedSpell::from_request(&request);
 
-    match repositories::spells::update_spell(conn, user_id, nanoid, updated_spell) {
+    match repositories::spells::update_spell(conn, user_id, &nanoid, updated_spell) {
         Ok(spell) => Ok(Json(spell.into_resource()).into_response()),
         Err(diesel::result::Error::NotFound) => Ok((
             StatusCode::NOT_FOUND,
-            "You don't have a spell with this id in your spellbook.",
+            format!(
+                "You don't have a spell with the id \"{}\" in your spellbook.",
+                nanoid
+            ),
         )
             .into_response()),
         Err(e) => {
-            eprintln!("error updating spell: {}", e);
-            Ok((StatusCode::INTERNAL_SERVER_ERROR, "error updating spell").into_response())
+            let msg = "Failed to update spell";
+            eprintln!("{}: {}", msg, e);
+            Ok((StatusCode::INTERNAL_SERVER_ERROR, msg).into_response())
         }
     }
 }
@@ -143,17 +152,21 @@ pub async fn delete_spell(
     match repositories::spells::delete_spell(conn, user_id, &nanoid) {
         Ok(1) => Ok((
             StatusCode::OK,
-            "The spell was successfully erased from your spellbook.",
+            "The spell was successfully erased from your spellbook",
         )
             .into_response()),
         Ok(_) => Ok((
             StatusCode::NOT_FOUND,
-            "You don't have a spell with this id in your spellbook.",
+            format!(
+                "You don't have a spell with the id \"{}\" in your spellbook.",
+                nanoid
+            ),
         )
             .into_response()),
         Err(e) => {
-            eprintln!("error deleting spell: {}", e);
-            Ok((StatusCode::INTERNAL_SERVER_ERROR, "error deleting spell").into_response())
+            let msg = "Failed to erase spell";
+            eprintln!("{}: {}", msg, e);
+            Ok((StatusCode::INTERNAL_SERVER_ERROR, msg).into_response())
         }
     }
 }
@@ -169,17 +182,17 @@ pub async fn publish_spell(
             if spell.published {
                 return Ok((
                     StatusCode::UNPROCESSABLE_ENTITY,
-                    format!("Your spell \"{}\" is already published.", &spell.name),
+                    format!("Your spell \"{}\" is already published", &spell.name),
                 ));
             }
             match repositories::spells::publish_spell(conn, user_id, &nanoid, true) {
                 Ok(_) => Ok((
                     StatusCode::OK,
-                    format!("Your spell \"{}\" was successfully published.", &spell.name),
+                    format!("Your spell \"{}\" was successfully published", &spell.name),
                 )),
                 Err(e) => {
-                    let msg = format!("error publishing spell: {}", e);
-                    eprintln!("{}", msg);
+                    let msg = "Failed to publish spell".to_string();
+                    eprintln!("{}: {}", msg, e);
                     Ok((StatusCode::INTERNAL_SERVER_ERROR, msg))
                 }
             }
@@ -187,13 +200,13 @@ pub async fn publish_spell(
         Err(diesel::result::Error::NotFound) => Ok((
             StatusCode::NOT_FOUND,
             format!(
-                "A spell with the id \"{}\" does not exist in your spellbook.",
+                "You don't have a spell with the id \"{}\" in your spellbook",
                 nanoid
             ),
         )),
         Err(e) => {
-            let msg = format!("error fetching spell: {}", e);
-            eprintln!("{}", msg);
+            let msg = "Failed to retrieve spell".to_string();
+            eprintln!("{}: {}", msg, e);
             Ok((StatusCode::INTERNAL_SERVER_ERROR, msg))
         }
     }
@@ -210,20 +223,20 @@ pub async fn unpublish_spell(
             if !spell.published {
                 return Ok((
                     StatusCode::UNPROCESSABLE_ENTITY,
-                    format!("Your spell \"{}\" is not public.", &spell.name),
+                    format!("Your spell \"{}\" is not public", &spell.name),
                 ));
             }
             match repositories::spells::publish_spell(conn, user_id, &nanoid, false) {
                 Ok(_) => Ok((
                     StatusCode::OK,
                     format!(
-                        "Your spell \"{}\" was successfully unpublished.",
+                        "Your spell \"{}\" was successfully unpublished",
                         &spell.name
                     ),
                 )),
                 Err(e) => {
-                    let msg = format!("error unpublishing spell: {}", e);
-                    eprintln!("{}", msg);
+                    let msg = "Failed to unpublish spell".to_string();
+                    eprintln!("{}: {}", msg, e);
                     Ok((StatusCode::INTERNAL_SERVER_ERROR, msg))
                 }
             }
@@ -231,13 +244,13 @@ pub async fn unpublish_spell(
         Err(diesel::result::Error::NotFound) => Ok((
             StatusCode::NOT_FOUND,
             format!(
-                "A spell with the id \"{}\" does not exist in your spellbook.",
+                "You don't have a spell with the id \"{}\" in your spellbook",
                 nanoid
             ),
         )),
         Err(e) => {
-            let msg = format!("error fetching spell: {}", e);
-            eprintln!("{}", msg);
+            let msg = "Failed to retrieve spell".to_string();
+            eprintln!("{}: {}", msg, e);
             Ok((StatusCode::INTERNAL_SERVER_ERROR, msg))
         }
     }
@@ -252,8 +265,8 @@ pub async fn query_spells(
     match repositories::spells::query_spells(conn, user_id, request) {
         Ok(spells) => Ok(Json(spells.into_collection()).into_response()),
         Err(e) => {
-            let msg = format!("error querying spells: {}", e);
-            eprintln!("{}", msg);
+            let msg = "Failed to query spells";
+            eprintln!("{}: {}", msg, e);
             Ok((StatusCode::INTERNAL_SERVER_ERROR, msg).into_response())
         }
     }
@@ -268,8 +281,8 @@ pub async fn query_public_spells(
     match repositories::spells::query_public_spells(conn, user_id, request) {
         Ok(spells_with_users) => Ok(Json(spells_with_users.into_collection()).into_response()),
         Err(e) => {
-            let msg = format!("error querying public spells: {}", e);
-            eprintln!("{}", msg);
+            let msg = "Failed to retrieve public spells";
+            eprintln!("{}: {}", msg, e);
             Ok((StatusCode::INTERNAL_SERVER_ERROR, msg).into_response())
         }
     }
@@ -291,8 +304,8 @@ pub async fn copy_public_spell(
             )
                 .into_response()),
             _ => {
-                let msg = format!("error fetching published spell: {}", e);
-                eprintln!("{}", msg);
+                let msg = "Failed to retrieve published spell";
+                eprintln!("{}: {}", msg, e);
                 Ok((StatusCode::INTERNAL_SERVER_ERROR, msg).into_response())
             }
         },
@@ -301,7 +314,7 @@ pub async fn copy_public_spell(
                 Ok((
                     StatusCode::UNPROCESSABLE_ENTITY,
                     format!(
-                        "You already have a spell with the name \"{}\" in your spellbook.",
+                        "You already have a spell with the name \"{}\" in your spellbook",
                         spell.name
                     ),
                 )
@@ -324,8 +337,8 @@ pub async fn copy_public_spell(
                 match repositories::spells::insert_spell(conn, copy) {
                     Ok(spell) => Ok(Json(spell.into_resource()).into_response()),
                     Err(e) => {
-                        let msg = format!("error inserting spell: {}", e);
-                        eprintln!("{}", msg);
+                        let msg = "Failed to copy spell";
+                        eprintln!("{}: {}", msg, e);
                         Ok((StatusCode::INTERNAL_SERVER_ERROR, msg).into_response())
                     }
                 }

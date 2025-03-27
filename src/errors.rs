@@ -5,10 +5,10 @@ use crate::enums::MagicSchool;
 
 #[derive(Debug, Error)]
 pub enum SpellValidationError {
-    #[error("invalid spell level \"{0}\" expected \"Cantrip\" or \"Level [1-9]\"")]
+    #[error("Invalid spell level \"{0}\" expected \"Cantrip\" or \"Level [1-9]\"")]
     InvalidSpellLevel(String),
     #[error(
-        "invalid school of magic \"{0}\" expected one of: {:?}",
+        "Invalid school of magic \"{0}\" expected one of: {:?}",
         MagicSchool::VARIANTS
     )]
     InvalidMagicSchool(String),
