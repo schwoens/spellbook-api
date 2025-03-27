@@ -54,5 +54,5 @@ docker-compose up -d
 cargo run
 ```
 
-For testing it is recommened to use the Swagger UI 'Try it out' feature. You can find the Swagger documentation under localhost:8080 when the docker container is running.
+For testing it is recommened to use the Swagger UI 'Try it out' feature. You can find the Swagger documentation at [http://localhost:8080](http://localhost:8080) when the docker container is running.
 
